@@ -1,0 +1,502 @@
+[
+  {
+    "id": "rec_0001",
+    "type": "HR",
+    "content": "Employee/Patient: Susan Robinson. SSN: 903-78-3246. Date of Birth: 1991-05-12. Phone: (327) 649-4201. Email: susan.robinson1@corp-internal.com. Department: HR. Salary: $163,333. Condition: Arthritis. Notes: Routine review completed for Susan Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0002",
+    "type": "Clinical",
+    "content": "Employee/Patient: James Taylor. SSN: 620-71-3769. Date of Birth: 1972-09-10. Phone: (871) 882-4773. Email: james.taylor13@corp-internal.com. Department: IT. Salary: $107,283. Condition: Hypothyroidism. Notes: Routine review completed for James Taylor on 2026-05-01."
+  },
+  {
+    "id": "rec_0003",
+    "type": "HR",
+    "content": "Employee/Patient: Michael Brown. SSN: 362-93-9849. Date of Birth: 1980-02-24. Phone: (563) 227-1364. Email: michael.brown39@corp-internal.com. Department: Legal. Salary: $61,905. Condition: GERD. Notes: Routine review completed for Michael Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0004",
+    "type": "HR",
+    "content": "Employee/Patient: David Thompson. SSN: 207-99-2324. Date of Birth: 1995-05-13. Phone: (829) 655-3271. Email: david.thompson25@corp-internal.com. Department: Operations. Salary: $71,243. Condition: Type 2 Diabetes. Notes: Routine review completed for David Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0005",
+    "type": "HR",
+    "content": "Employee/Patient: Emily Thompson. SSN: 311-85-6339. Date of Birth: 1968-12-07. Phone: (492) 369-8100. Email: emily.thompson64@corp-internal.com. Department: HR. Salary: $76,124. Condition: Anxiety Disorder. Notes: Routine review completed for Emily Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0006",
+    "type": "HR",
+    "content": "Employee/Patient: David Williams. SSN: 585-27-5432. Date of Birth: 1990-12-07. Phone: (816) 508-1056. Email: david.williams8@corp-internal.com. Department: HR. Salary: $110,267. Condition: Chronic Back Pain. Notes: Routine review completed for David Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0007",
+    "type": "Clinical",
+    "content": "Employee/Patient: Linda Martin. SSN: 853-13-9767. Date of Birth: 1975-11-26. Phone: (619) 868-1646. Email: linda.martin57@corp-internal.com. Department: Finance. Salary: $87,031. Condition: Arthritis. Notes: Routine review completed for Linda Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0008",
+    "type": "Clinical",
+    "content": "Employee/Patient: Sarah Jones. SSN: 393-76-3698. Date of Birth: 1978-09-04. Phone: (396) 232-9178. Email: sarah.jones17@corp-internal.com. Department: Engineering. Salary: $143,843. Condition: GERD. Notes: Routine review completed for Sarah Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0009",
+    "type": "Clinical",
+    "content": "Employee/Patient: Emily Davis. SSN: 448-16-1344. Date of Birth: 1976-03-26. Phone: (396) 310-1972. Email: emily.davis41@corp-internal.com. Department: HR. Salary: $159,962. Condition: Migraine. Notes: Routine review completed for Emily Davis on 2026-05-01."
+  },
+  {
+    "id": "rec_0010",
+    "type": "Clinical",
+    "content": "Employee/Patient: Richard Taylor. SSN: 449-53-6184. Date of Birth: 1989-08-26. Phone: (347) 267-9138. Email: richard.taylor83@corp-internal.com. Department: Clinical. Salary: $96,296. Condition: Asthma. Notes: Routine review completed for Richard Taylor on 2026-05-01."
+  },
+  {
+    "id": "rec_0011",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Martin. SSN: 137-61-9441. Date of Birth: 1992-12-07. Phone: (832) 853-6235. Email: lisa.martin80@corp-internal.com. Department: Engineering. Salary: $81,516. Condition: Type 2 Diabetes. Notes: Routine review completed for Lisa Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0012",
+    "type": "Clinical",
+    "content": "Employee/Patient: David Williams. SSN: 221-98-4670. Date of Birth: 1957-05-27. Phone: (636) 366-6008. Email: david.williams8@corp-internal.com. Department: Research. Salary: $123,647. Condition: Migraine. Notes: Routine review completed for David Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0013",
+    "type": "Clinical",
+    "content": "Employee/Patient: James Thompson. SSN: 611-59-3084. Date of Birth: 1995-07-15. Phone: (662) 694-7606. Email: james.thompson23@corp-internal.com. Department: Engineering. Salary: $111,510. Condition: Chronic Back Pain. Notes: Routine review completed for James Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0014",
+    "type": "HR",
+    "content": "Employee/Patient: Christopher Anderson. SSN: 858-59-6461. Date of Birth: 1967-03-07. Phone: (617) 651-9190. Email: christopher.anderson65@corp-internal.com. Department: IT. Salary: $130,190. Condition: Type 2 Diabetes. Notes: Routine review completed for Christopher Anderson on 2026-05-01."
+  },
+  {
+    "id": "rec_0015",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Anderson. SSN: 932-67-4678. Date of Birth: 1994-02-16. Phone: (440) 247-7592. Email: linda.anderson91@corp-internal.com. Department: Finance. Salary: $108,452. Condition: GERD. Notes: Routine review completed for Linda Anderson on 2026-05-01."
+  },
+  {
+    "id": "rec_0016",
+    "type": "Clinical",
+    "content": "Employee/Patient: Susan Wilson. SSN: 627-78-9373. Date of Birth: 1963-08-20. Phone: (495) 958-4016. Email: susan.wilson32@corp-internal.com. Department: Operations. Salary: $86,687. Condition: GERD. Notes: Routine review completed for Susan Wilson on 2026-05-01."
+  },
+  {
+    "id": "rec_0017",
+    "type": "Clinical",
+    "content": "Employee/Patient: William Jones. SSN: 932-87-9672. Date of Birth: 1967-12-17. Phone: (547) 669-7191. Email: william.jones84@corp-internal.com. Department: Clinical. Salary: $100,555. Condition: GERD. Notes: Routine review completed for William Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0018",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Harris. SSN: 643-38-3475. Date of Birth: 1959-10-12. Phone: (894) 406-6083. Email: lisa.harris27@corp-internal.com. Department: Marketing. Salary: $66,376. Condition: Arthritis. Notes: Routine review completed for Lisa Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0019",
+    "type": "HR",
+    "content": "Employee/Patient: Joseph Martinez. SSN: 498-18-1591. Date of Birth: 1990-05-01. Phone: (315) 384-2961. Email: joseph.martinez39@corp-internal.com. Department: Research. Salary: $167,738. Condition: Migraine. Notes: Routine review completed for Joseph Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0020",
+    "type": "Clinical",
+    "content": "Employee/Patient: Charles Martinez. SSN: 920-51-1211. Date of Birth: 1986-01-26. Phone: (810) 442-4993. Email: charles.martinez28@corp-internal.com. Department: IT. Salary: $161,418. Condition: Chronic Back Pain. Notes: Routine review completed for Charles Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0021",
+    "type": "Clinical",
+    "content": "Employee/Patient: Emily Smith. SSN: 612-93-2986. Date of Birth: 1959-02-03. Phone: (695) 422-3381. Email: emily.smith23@corp-internal.com. Department: Research. Salary: $45,037. Condition: Migraine. Notes: Routine review completed for Emily Smith on 2026-05-01."
+  },
+  {
+    "id": "rec_0022",
+    "type": "HR",
+    "content": "Employee/Patient: Sarah Harris. SSN: 992-51-1057. Date of Birth: 1962-11-23. Phone: (238) 508-7204. Email: sarah.harris8@corp-internal.com. Department: Research. Salary: $140,430. Condition: Chronic Back Pain. Notes: Routine review completed for Sarah Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0023",
+    "type": "HR",
+    "content": "Employee/Patient: Emily Williams. SSN: 837-21-5168. Date of Birth: 1995-11-04. Phone: (233) 653-1867. Email: emily.williams71@corp-internal.com. Department: HR. Salary: $133,014. Condition: Arthritis. Notes: Routine review completed for Emily Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0024",
+    "type": "HR",
+    "content": "Employee/Patient: James Brown. SSN: 847-47-1575. Date of Birth: 1980-07-22. Phone: (985) 992-6987. Email: james.brown58@corp-internal.com. Department: Clinical. Salary: $153,966. Condition: Migraine. Notes: Routine review completed for James Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0025",
+    "type": "Clinical",
+    "content": "Employee/Patient: Maria Jones. SSN: 774-52-7769. Date of Birth: 1974-09-10. Phone: (664) 255-5995. Email: maria.jones76@corp-internal.com. Department: Marketing. Salary: $142,316. Condition: Hypertension. Notes: Routine review completed for Maria Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0026",
+    "type": "HR",
+    "content": "Employee/Patient: Thomas Harris. SSN: 172-23-7989. Date of Birth: 1987-12-11. Phone: (436) 313-7634. Email: thomas.harris33@corp-internal.com. Department: Research. Salary: $154,758. Condition: Asthma. Notes: Routine review completed for Thomas Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0027",
+    "type": "HR",
+    "content": "Employee/Patient: David Brown. SSN: 107-30-4980. Date of Birth: 1984-12-10. Phone: (409) 556-5380. Email: david.brown58@corp-internal.com. Department: HR. Salary: $164,846. Condition: Depression. Notes: Routine review completed for David Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0028",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Martin. SSN: 641-70-7945. Date of Birth: 1967-08-01. Phone: (407) 798-5076. Email: lisa.martin94@corp-internal.com. Department: Finance. Salary: $79,734. Condition: Anxiety Disorder. Notes: Routine review completed for Lisa Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0029",
+    "type": "Clinical",
+    "content": "Employee/Patient: Susan Martin. SSN: 328-83-9146. Date of Birth: 1975-06-13. Phone: (202) 809-6048. Email: susan.martin43@corp-internal.com. Department: Research. Salary: $139,675. Condition: Migraine. Notes: Routine review completed for Susan Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0030",
+    "type": "HR",
+    "content": "Employee/Patient: Thomas Johnson. SSN: 211-35-8885. Date of Birth: 1993-10-31. Phone: (356) 613-1368. Email: thomas.johnson16@corp-internal.com. Department: Operations. Salary: $161,884. Condition: Arthritis. Notes: Routine review completed for Thomas Johnson on 2026-05-01."
+  },
+  {
+    "id": "rec_0031",
+    "type": "HR",
+    "content": "Employee/Patient: Maria Brown. SSN: 700-88-6707. Date of Birth: 1985-08-08. Phone: (986) 945-4627. Email: maria.brown24@corp-internal.com. Department: HR. Salary: $109,308. Condition: Asthma. Notes: Routine review completed for Maria Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0032",
+    "type": "HR",
+    "content": "Employee/Patient: Thomas Thomas. SSN: 703-84-7634. Date of Birth: 1975-04-12. Phone: (546) 725-5531. Email: thomas.thomas42@corp-internal.com. Department: HR. Salary: $81,918. Condition: Type 2 Diabetes. Notes: Routine review completed for Thomas Thomas on 2026-05-01."
+  },
+  {
+    "id": "rec_0033",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa White. SSN: 924-24-5843. Date of Birth: 1993-05-13. Phone: (834) 208-4587. Email: lisa.white65@corp-internal.com. Department: Clinical. Salary: $94,925. Condition: Anxiety Disorder. Notes: Routine review completed for Lisa White on 2026-05-01."
+  },
+  {
+    "id": "rec_0034",
+    "type": "Clinical",
+    "content": "Employee/Patient: Thomas Thompson. SSN: 811-36-4282. Date of Birth: 1959-08-20. Phone: (245) 314-6292. Email: thomas.thompson46@corp-internal.com. Department: Marketing. Salary: $47,105. Condition: Depression. Notes: Routine review completed for Thomas Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0035",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Thompson. SSN: 709-60-8886. Date of Birth: 1972-07-16. Phone: (376) 330-6657. Email: linda.thompson79@corp-internal.com. Department: Sales. Salary: $124,682. Condition: Depression. Notes: Routine review completed for Linda Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0036",
+    "type": "Clinical",
+    "content": "Employee/Patient: Richard Taylor. SSN: 355-51-2822. Date of Birth: 1955-12-23. Phone: (386) 213-9304. Email: richard.taylor47@corp-internal.com. Department: Engineering. Salary: $74,335. Condition: Chronic Back Pain. Notes: Routine review completed for Richard Taylor on 2026-05-01."
+  },
+  {
+    "id": "rec_0037",
+    "type": "HR",
+    "content": "Employee/Patient: Robert Robinson. SSN: 940-60-1044. Date of Birth: 2000-04-02. Phone: (238) 972-1996. Email: robert.robinson30@corp-internal.com. Department: Marketing. Salary: $66,787. Condition: Migraine. Notes: Routine review completed for Robert Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0038",
+    "type": "Clinical",
+    "content": "Employee/Patient: James Jones. SSN: 155-78-9526. Date of Birth: 1973-10-18. Phone: (904) 641-2900. Email: james.jones84@corp-internal.com. Department: Sales. Salary: $150,970. Condition: Hypothyroidism. Notes: Routine review completed for James Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0039",
+    "type": "Clinical",
+    "content": "Employee/Patient: Susan White. SSN: 795-83-5944. Date of Birth: 1981-03-03. Phone: (794) 769-1399. Email: susan.white97@corp-internal.com. Department: Sales. Salary: $119,581. Condition: Anxiety Disorder. Notes: Routine review completed for Susan White on 2026-05-01."
+  },
+  {
+    "id": "rec_0040",
+    "type": "Clinical",
+    "content": "Employee/Patient: Jessica Brown. SSN: 136-54-1170. Date of Birth: 1999-04-02. Phone: (745) 355-8158. Email: jessica.brown35@corp-internal.com. Department: IT. Salary: $56,842. Condition: Anxiety Disorder. Notes: Routine review completed for Jessica Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0041",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Smith. SSN: 951-66-2768. Date of Birth: 1973-11-08. Phone: (644) 464-4730. Email: linda.smith58@corp-internal.com. Department: Clinical. Salary: $130,128. Condition: Type 2 Diabetes. Notes: Routine review completed for Linda Smith on 2026-05-01."
+  },
+  {
+    "id": "rec_0042",
+    "type": "Clinical",
+    "content": "Employee/Patient: Susan Garcia. SSN: 976-15-3801. Date of Birth: 2000-07-19. Phone: (244) 604-7934. Email: susan.garcia57@corp-internal.com. Department: Sales. Salary: $75,476. Condition: GERD. Notes: Routine review completed for Susan Garcia on 2026-05-01."
+  },
+  {
+    "id": "rec_0043",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Harris. SSN: 142-13-9977. Date of Birth: 1985-05-26. Phone: (653) 630-9244. Email: linda.harris29@corp-internal.com. Department: Research. Salary: $59,734. Condition: Anxiety Disorder. Notes: Routine review completed for Linda Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0044",
+    "type": "HR",
+    "content": "Employee/Patient: Christopher Harris. SSN: 577-25-7503. Date of Birth: 1980-06-29. Phone: (918) 908-2095. Email: christopher.harris9@corp-internal.com. Department: Legal. Salary: $74,160. Condition: Asthma. Notes: Routine review completed for Christopher Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0045",
+    "type": "Clinical",
+    "content": "Employee/Patient: David Williams. SSN: 266-16-5479. Date of Birth: 1987-12-02. Phone: (485) 269-7527. Email: david.williams91@corp-internal.com. Department: HR. Salary: $80,667. Condition: Migraine. Notes: Routine review completed for David Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0046",
+    "type": "HR",
+    "content": "Employee/Patient: Susan Johnson. SSN: 853-85-5308. Date of Birth: 1984-08-13. Phone: (638) 946-8215. Email: susan.johnson59@corp-internal.com. Department: IT. Salary: $145,981. Condition: Anxiety Disorder. Notes: Routine review completed for Susan Johnson on 2026-05-01."
+  },
+  {
+    "id": "rec_0047",
+    "type": "Clinical",
+    "content": "Employee/Patient: Emily Brown. SSN: 687-96-6244. Date of Birth: 1977-02-25. Phone: (224) 572-1094. Email: emily.brown38@corp-internal.com. Department: Operations. Salary: $101,586. Condition: GERD. Notes: Routine review completed for Emily Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0048",
+    "type": "HR",
+    "content": "Employee/Patient: Christopher Moore. SSN: 318-64-9444. Date of Birth: 1972-05-21. Phone: (803) 698-4845. Email: christopher.moore71@corp-internal.com. Department: Research. Salary: $135,362. Condition: Hypothyroidism. Notes: Routine review completed for Christopher Moore on 2026-05-01."
+  },
+  {
+    "id": "rec_0049",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Johnson. SSN: 106-31-5480. Date of Birth: 1988-12-19. Phone: (437) 202-6540. Email: lisa.johnson99@corp-internal.com. Department: Legal. Salary: $154,636. Condition: Anxiety Disorder. Notes: Routine review completed for Lisa Johnson on 2026-05-01."
+  },
+  {
+    "id": "rec_0050",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Robinson. SSN: 613-10-5311. Date of Birth: 1973-12-13. Phone: (845) 817-6602. Email: lisa.robinson88@corp-internal.com. Department: Clinical. Salary: $142,053. Condition: Depression. Notes: Routine review completed for Lisa Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0051",
+    "type": "HR",
+    "content": "Employee/Patient: Susan Harris. SSN: 548-97-5298. Date of Birth: 1976-11-14. Phone: (301) 384-8213. Email: susan.harris81@corp-internal.com. Department: Research. Salary: $162,956. Condition: Hypertension. Notes: Routine review completed for Susan Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0052",
+    "type": "HR",
+    "content": "Employee/Patient: Susan Harris. SSN: 150-40-2100. Date of Birth: 1974-12-05. Phone: (953) 478-1682. Email: susan.harris99@corp-internal.com. Department: Engineering. Salary: $161,570. Condition: Depression. Notes: Routine review completed for Susan Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0053",
+    "type": "Clinical",
+    "content": "Employee/Patient: Sarah Martinez. SSN: 722-80-5988. Date of Birth: 1987-07-08. Phone: (227) 402-9113. Email: sarah.martinez81@corp-internal.com. Department: Operations. Salary: $102,849. Condition: Type 2 Diabetes. Notes: Routine review completed for Sarah Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0054",
+    "type": "Clinical",
+    "content": "Employee/Patient: James White. SSN: 825-17-5020. Date of Birth: 1957-05-12. Phone: (288) 633-9569. Email: james.white57@corp-internal.com. Department: Finance. Salary: $101,529. Condition: Chronic Back Pain. Notes: Routine review completed for James White on 2026-05-01."
+  },
+  {
+    "id": "rec_0055",
+    "type": "HR",
+    "content": "Employee/Patient: Barbara Johnson. SSN: 165-78-7501. Date of Birth: 1985-03-28. Phone: (527) 325-2000. Email: barbara.johnson52@corp-internal.com. Department: Clinical. Salary: $130,272. Condition: Asthma. Notes: Routine review completed for Barbara Johnson on 2026-05-01."
+  },
+  {
+    "id": "rec_0056",
+    "type": "HR",
+    "content": "Employee/Patient: Sarah Martin. SSN: 432-58-6096. Date of Birth: 1963-04-07. Phone: (509) 382-6733. Email: sarah.martin9@corp-internal.com. Department: IT. Salary: $92,343. Condition: GERD. Notes: Routine review completed for Sarah Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0057",
+    "type": "HR",
+    "content": "Employee/Patient: Joseph White. SSN: 779-18-8301. Date of Birth: 1996-05-13. Phone: (549) 346-4514. Email: joseph.white52@corp-internal.com. Department: Clinical. Salary: $48,184. Condition: Asthma. Notes: Routine review completed for Joseph White on 2026-05-01."
+  },
+  {
+    "id": "rec_0058",
+    "type": "Clinical",
+    "content": "Employee/Patient: David Williams. SSN: 223-25-9692. Date of Birth: 1986-07-21. Phone: (802) 899-1376. Email: david.williams60@corp-internal.com. Department: Finance. Salary: $136,523. Condition: Type 2 Diabetes. Notes: Routine review completed for David Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0059",
+    "type": "HR",
+    "content": "Employee/Patient: Maria Garcia. SSN: 804-77-5529. Date of Birth: 1984-12-03. Phone: (886) 714-6642. Email: maria.garcia31@corp-internal.com. Department: Sales. Salary: $97,186. Condition: Arthritis. Notes: Routine review completed for Maria Garcia on 2026-05-01."
+  },
+  {
+    "id": "rec_0060",
+    "type": "Clinical",
+    "content": "Employee/Patient: Christopher Williams. SSN: 993-93-9680. Date of Birth: 1973-11-22. Phone: (512) 847-5579. Email: christopher.williams4@corp-internal.com. Department: Marketing. Salary: $54,550. Condition: Hypothyroidism. Notes: Routine review completed for Christopher Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0061",
+    "type": "Clinical",
+    "content": "Employee/Patient: Richard Miller. SSN: 270-98-2998. Date of Birth: 1957-01-02. Phone: (396) 638-3941. Email: richard.miller96@corp-internal.com. Department: Engineering. Salary: $178,907. Condition: Depression. Notes: Routine review completed for Richard Miller on 2026-05-01."
+  },
+  {
+    "id": "rec_0062",
+    "type": "Clinical",
+    "content": "Employee/Patient: Barbara Garcia. SSN: 449-69-4493. Date of Birth: 1972-05-10. Phone: (281) 504-3999. Email: barbara.garcia84@corp-internal.com. Department: Clinical. Salary: $167,873. Condition: Arthritis. Notes: Routine review completed for Barbara Garcia on 2026-05-01."
+  },
+  {
+    "id": "rec_0063",
+    "type": "Clinical",
+    "content": "Employee/Patient: Christopher Martin. SSN: 494-69-5729. Date of Birth: 1983-06-12. Phone: (918) 211-5878. Email: christopher.martin24@corp-internal.com. Department: Marketing. Salary: $63,868. Condition: Arthritis. Notes: Routine review completed for Christopher Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0064",
+    "type": "HR",
+    "content": "Employee/Patient: Karen Davis. SSN: 487-55-2204. Date of Birth: 1983-07-16. Phone: (353) 504-4316. Email: karen.davis10@corp-internal.com. Department: Legal. Salary: $145,833. Condition: GERD. Notes: Routine review completed for Karen Davis on 2026-05-01."
+  },
+  {
+    "id": "rec_0065",
+    "type": "Clinical",
+    "content": "Employee/Patient: Susan Jones. SSN: 966-95-5742. Date of Birth: 1963-05-04. Phone: (831) 536-4242. Email: susan.jones70@corp-internal.com. Department: Legal. Salary: $52,340. Condition: Asthma. Notes: Routine review completed for Susan Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0066",
+    "type": "Clinical",
+    "content": "Employee/Patient: Michael Moore. SSN: 417-66-3632. Date of Birth: 2000-09-22. Phone: (241) 609-9199. Email: michael.moore86@corp-internal.com. Department: Finance. Salary: $161,777. Condition: Migraine. Notes: Routine review completed for Michael Moore on 2026-05-01."
+  },
+  {
+    "id": "rec_0067",
+    "type": "HR",
+    "content": "Employee/Patient: Joseph Moore. SSN: 415-53-9537. Date of Birth: 1976-06-03. Phone: (712) 960-6914. Email: joseph.moore67@corp-internal.com. Department: HR. Salary: $118,330. Condition: GERD. Notes: Routine review completed for Joseph Moore on 2026-05-01."
+  },
+  {
+    "id": "rec_0068",
+    "type": "Clinical",
+    "content": "Employee/Patient: Sarah Thompson. SSN: 949-45-1310. Date of Birth: 1957-02-17. Phone: (335) 647-3134. Email: sarah.thompson90@corp-internal.com. Department: Marketing. Salary: $144,875. Condition: Type 2 Diabetes. Notes: Routine review completed for Sarah Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0069",
+    "type": "Clinical",
+    "content": "Employee/Patient: James Thomas. SSN: 364-54-1564. Date of Birth: 1964-08-18. Phone: (686) 550-6518. Email: james.thomas61@corp-internal.com. Department: Operations. Salary: $142,304. Condition: Chronic Back Pain. Notes: Routine review completed for James Thomas on 2026-05-01."
+  },
+  {
+    "id": "rec_0070",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Taylor. SSN: 297-77-8386. Date of Birth: 1973-11-18. Phone: (302) 711-3206. Email: linda.taylor11@corp-internal.com. Department: Sales. Salary: $124,041. Condition: Asthma. Notes: Routine review completed for Linda Taylor on 2026-05-01."
+  },
+  {
+    "id": "rec_0071",
+    "type": "Clinical",
+    "content": "Employee/Patient: James Davis. SSN: 826-66-2327. Date of Birth: 1990-12-17. Phone: (457) 364-9411. Email: james.davis52@corp-internal.com. Department: Research. Salary: $130,470. Condition: Asthma. Notes: Routine review completed for James Davis on 2026-05-01."
+  },
+  {
+    "id": "rec_0072",
+    "type": "HR",
+    "content": "Employee/Patient: Robert Davis. SSN: 207-43-4432. Date of Birth: 1989-07-17. Phone: (554) 442-9564. Email: robert.davis30@corp-internal.com. Department: HR. Salary: $47,065. Condition: Type 2 Diabetes. Notes: Routine review completed for Robert Davis on 2026-05-01."
+  },
+  {
+    "id": "rec_0073",
+    "type": "Clinical",
+    "content": "Employee/Patient: William Anderson. SSN: 716-24-9491. Date of Birth: 1974-10-13. Phone: (817) 685-8241. Email: william.anderson43@corp-internal.com. Department: Engineering. Salary: $144,436. Condition: Asthma. Notes: Routine review completed for William Anderson on 2026-05-01."
+  },
+  {
+    "id": "rec_0074",
+    "type": "HR",
+    "content": "Employee/Patient: Nancy Robinson. SSN: 630-90-5744. Date of Birth: 1978-09-16. Phone: (620) 940-5636. Email: nancy.robinson46@corp-internal.com. Department: Finance. Salary: $94,313. Condition: Migraine. Notes: Routine review completed for Nancy Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0075",
+    "type": "Clinical",
+    "content": "Employee/Patient: Lisa Jones. SSN: 183-51-8209. Date of Birth: 1960-07-13. Phone: (447) 909-9611. Email: lisa.jones43@corp-internal.com. Department: Legal. Salary: $117,117. Condition: Arthritis. Notes: Routine review completed for Lisa Jones on 2026-05-01."
+  },
+  {
+    "id": "rec_0076",
+    "type": "HR",
+    "content": "Employee/Patient: David Martinez. SSN: 874-57-4499. Date of Birth: 1980-12-05. Phone: (817) 600-6312. Email: david.martinez66@corp-internal.com. Department: Clinical. Salary: $56,661. Condition: Hypertension. Notes: Routine review completed for David Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0077",
+    "type": "Clinical",
+    "content": "Employee/Patient: Emily Johnson. SSN: 694-24-1744. Date of Birth: 1966-06-19. Phone: (340) 794-2046. Email: emily.johnson4@corp-internal.com. Department: Engineering. Salary: $122,517. Condition: Type 2 Diabetes. Notes: Routine review completed for Emily Johnson on 2026-05-01."
+  },
+  {
+    "id": "rec_0078",
+    "type": "HR",
+    "content": "Employee/Patient: Jessica Martinez. SSN: 263-87-6434. Date of Birth: 1966-08-19. Phone: (700) 362-2586. Email: jessica.martinez48@corp-internal.com. Department: Finance. Salary: $174,880. Condition: Hypertension. Notes: Routine review completed for Jessica Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0079",
+    "type": "HR",
+    "content": "Employee/Patient: Jessica Harris. SSN: 903-98-9202. Date of Birth: 1998-02-28. Phone: (735) 275-6536. Email: jessica.harris11@corp-internal.com. Department: Finance. Salary: $175,921. Condition: Asthma. Notes: Routine review completed for Jessica Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0080",
+    "type": "HR",
+    "content": "Employee/Patient: Maria Brown. SSN: 457-39-4376. Date of Birth: 1964-02-20. Phone: (487) 926-2039. Email: maria.brown7@corp-internal.com. Department: Sales. Salary: $109,597. Condition: Depression. Notes: Routine review completed for Maria Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0081",
+    "type": "Clinical",
+    "content": "Employee/Patient: David Garcia. SSN: 645-62-8218. Date of Birth: 1958-03-19. Phone: (893) 767-6112. Email: david.garcia87@corp-internal.com. Department: Engineering. Salary: $160,610. Condition: Anxiety Disorder. Notes: Routine review completed for David Garcia on 2026-05-01."
+  },
+  {
+    "id": "rec_0082",
+    "type": "Clinical",
+    "content": "Employee/Patient: David Brown. SSN: 713-67-1667. Date of Birth: 1959-01-02. Phone: (631) 791-3937. Email: david.brown93@corp-internal.com. Department: Operations. Salary: $168,067. Condition: Type 2 Diabetes. Notes: Routine review completed for David Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0083",
+    "type": "Clinical",
+    "content": "Employee/Patient: Christopher Robinson. SSN: 835-72-7989. Date of Birth: 1997-12-02. Phone: (371) 677-9445. Email: christopher.robinson15@corp-internal.com. Department: Clinical. Salary: $172,088. Condition: Asthma. Notes: Routine review completed for Christopher Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0084",
+    "type": "HR",
+    "content": "Employee/Patient: Richard Moore. SSN: 792-69-4997. Date of Birth: 1982-06-28. Phone: (450) 965-2896. Email: richard.moore54@corp-internal.com. Department: Engineering. Salary: $155,547. Condition: Depression. Notes: Routine review completed for Richard Moore on 2026-05-01."
+  },
+  {
+    "id": "rec_0085",
+    "type": "Clinical",
+    "content": "Employee/Patient: Michael Jackson. SSN: 725-55-7993. Date of Birth: 1970-04-29. Phone: (931) 249-5576. Email: michael.jackson40@corp-internal.com. Department: Finance. Salary: $149,577. Condition: GERD. Notes: Routine review completed for Michael Jackson on 2026-05-01."
+  },
+  {
+    "id": "rec_0086",
+    "type": "HR",
+    "content": "Employee/Patient: Linda Garcia. SSN: 526-10-7010. Date of Birth: 1966-09-29. Phone: (889) 307-9489. Email: linda.garcia70@corp-internal.com. Department: Operations. Salary: $71,814. Condition: Type 2 Diabetes. Notes: Routine review completed for Linda Garcia on 2026-05-01."
+  },
+  {
+    "id": "rec_0087",
+    "type": "Clinical",
+    "content": "Employee/Patient: Maria Harris. SSN: 241-27-7003. Date of Birth: 1995-10-02. Phone: (211) 791-3011. Email: maria.harris30@corp-internal.com. Department: Clinical. Salary: $132,070. Condition: Arthritis. Notes: Routine review completed for Maria Harris on 2026-05-01."
+  },
+  {
+    "id": "rec_0088",
+    "type": "Clinical",
+    "content": "Employee/Patient: Nancy Martinez. SSN: 504-40-1665. Date of Birth: 1988-06-04. Phone: (319) 281-7033. Email: nancy.martinez18@corp-internal.com. Department: HR. Salary: $88,441. Condition: Type 2 Diabetes. Notes: Routine review completed for Nancy Martinez on 2026-05-01."
+  },
+  {
+    "id": "rec_0089",
+    "type": "HR",
+    "content": "Employee/Patient: Barbara Thompson. SSN: 435-98-4985. Date of Birth: 1976-04-12. Phone: (327) 606-4578. Email: barbara.thompson17@corp-internal.com. Department: Legal. Salary: $136,240. Condition: Arthritis. Notes: Routine review completed for Barbara Thompson on 2026-05-01."
+  },
+  {
+    "id": "rec_0090",
+    "type": "HR",
+    "content": "Employee/Patient: Michael Thomas. SSN: 187-69-4271. Date of Birth: 1992-11-11. Phone: (394) 909-8960. Email: michael.thomas87@corp-internal.com. Department: Clinical. Salary: $144,654. Condition: GERD. Notes: Routine review completed for Michael Thomas on 2026-05-01."
+  },
+  {
+    "id": "rec_0091",
+    "type": "HR",
+    "content": "Employee/Patient: Thomas Robinson. SSN: 381-16-6577. Date of Birth: 1989-03-22. Phone: (831) 206-7693. Email: thomas.robinson77@corp-internal.com. Department: Operations. Salary: $110,992. Condition: Asthma. Notes: Routine review completed for Thomas Robinson on 2026-05-01."
+  },
+  {
+    "id": "rec_0092",
+    "type": "Clinical",
+    "content": "Employee/Patient: Karen Martin. SSN: 633-42-7101. Date of Birth: 1985-06-05. Phone: (831) 271-6585. Email: karen.martin3@corp-internal.com. Department: Sales. Salary: $159,189. Condition: Asthma. Notes: Routine review completed for Karen Martin on 2026-05-01."
+  },
+  {
+    "id": "rec_0093",
+    "type": "HR",
+    "content": "Employee/Patient: Nancy Moore. SSN: 513-11-7172. Date of Birth: 1955-06-29. Phone: (422) 527-9114. Email: nancy.moore31@corp-internal.com. Department: Operations. Salary: $91,275. Condition: Type 2 Diabetes. Notes: Routine review completed for Nancy Moore on 2026-05-01."
+  },
+  {
+    "id": "rec_0094",
+    "type": "HR",
+    "content": "Employee/Patient: Michael Smith. SSN: 436-71-1305. Date of Birth: 1971-11-29. Phone: (221) 748-9606. Email: michael.smith74@corp-internal.com. Department: Research. Salary: $153,733. Condition: Hypothyroidism. Notes: Routine review completed for Michael Smith on 2026-05-01."
+  },
+  {
+    "id": "rec_0095",
+    "type": "Clinical",
+    "content": "Employee/Patient: Barbara Jackson. SSN: 496-54-2276. Date of Birth: 1963-04-15. Phone: (643) 846-4003. Email: barbara.jackson24@corp-internal.com. Department: Legal. Salary: $62,421. Condition: Migraine. Notes: Routine review completed for Barbara Jackson on 2026-05-01."
+  },
+  {
+    "id": "rec_0096",
+    "type": "HR",
+    "content": "Employee/Patient: Karen Williams. SSN: 156-52-2151. Date of Birth: 1987-03-02. Phone: (747) 250-1554. Email: karen.williams96@corp-internal.com. Department: Sales. Salary: $162,087. Condition: Arthritis. Notes: Routine review completed for Karen Williams on 2026-05-01."
+  },
+  {
+    "id": "rec_0097",
+    "type": "HR",
+    "content": "Employee/Patient: Maria Taylor. SSN: 563-47-2722. Date of Birth: 1965-12-09. Phone: (549) 913-5837. Email: maria.taylor74@corp-internal.com. Department: Clinical. Salary: $79,640. Condition: Chronic Back Pain. Notes: Routine review completed for Maria Taylor on 2026-05-01."
+  },
+  {
+    "id": "rec_0098",
+    "type": "HR",
+    "content": "Employee/Patient: William White. SSN: 573-46-7821. Date of Birth: 1974-01-09. Phone: (847) 690-7249. Email: william.white58@corp-internal.com. Department: Marketing. Salary: $84,898. Condition: Asthma. Notes: Routine review completed for William White on 2026-05-01."
+  },
+  {
+    "id": "rec_0099",
+    "type": "HR",
+    "content": "Employee/Patient: Michael Brown. SSN: 594-17-6619. Date of Birth: 1964-05-17. Phone: (482) 432-6371. Email: michael.brown75@corp-internal.com. Department: Clinical. Salary: $170,021. Condition: Migraine. Notes: Routine review completed for Michael Brown on 2026-05-01."
+  },
+  {
+    "id": "rec_0100",
+    "type": "Clinical",
+    "content": "Employee/Patient: Maria Miller. SSN: 757-39-2992. Date of Birth: 1983-09-04. Phone: (242) 843-3758. Email: maria.miller26@corp-internal.com. Department: Engineering. Salary: $98,279. Condition: Arthritis. Notes: Routine review completed for Maria Miller on 2026-05-01."
+  }
+]

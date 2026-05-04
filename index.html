@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sentinel-DS | Enterprise Privacy Command</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #05070a; --panel: rgba(13, 17, 28, 0.7); --accent: #6366f1;
+    --accent-glow: rgba(99, 102, 241, 0.4); --text: #f1f5f9;
+    --text-dim: #94a3b8; --success: #10b981; --border: rgba(255, 255, 255, 0.08);
+  }
+  body { background-color: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 300px; border-right: 1px solid var(--border); padding: 2rem; display: flex; flex-direction: column; gap: 2rem; background: linear-gradient(180deg, rgba(10,12,20,1) 0%, rgba(5,7,10,1) 100%); }
+  .stat-card { background: var(--panel); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--border); }
+  .stat-val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.8rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+  .main-content { flex: 1; display: flex; flex-direction: column; padding: 2rem; gap: 2rem; overflow-y: auto; }
+  .header { display: flex; justify-content: space-between; align-items: center; }
+  .pipeline-viz { display: flex; justify-content: space-between; align-items: center; padding: 3rem; background: var(--panel); border-radius: 24px; border: 1px solid var(--border); position: relative; }
+  .agent-node { width: 140px; text-align: center; z-index: 2; }
+  .node-icon { width: 60px; height: 60px; background: var(--bg); border: 2px solid var(--accent); border-radius: 50%; margin: 0 auto 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.3s ease; }
+  .shard-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; }
+  .shard-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; transition: all 0.3s ease; }
+  .shard-card.active { border-color: var(--success); box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+  .console-input { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; display: flex; gap: 1rem; }
+  textarea { flex: 1; background: transparent; border: none; color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 1rem; outline: none; resize: none; }
+  .btn-primary { background: var(--accent); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+  .btn-primary:hover { background: #4f46e5; }
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="logo">🛡️ SENTINEL-DS</div>
+  <div class="stat-card"><div class="stat-val" id="total-records">100</div><div class="stat-label">Records Managed</div></div>
+  <div class="stat-card"><div class="stat-val" id="privacy-score">99.2%</div><div class="stat-label">Privacy Guarantee (MIA)</div></div>
+  <div class="stat-card"><div class="stat-val" style="color: var(--success);">5 / 5</div><div class="stat-label">Active SISA Shards</div></div>
+</div>
+<div class="main-content">
+  <div class="header">
+    <h2>Privacy Orchestration Console</h2>
+    <div id="connection-status" style="color: var(--success)">● System Ready</div>
+  </div>
+  <div class="pipeline-viz">
+    <div class="agent-node"><div id="node-1" class="node-icon">📥</div><div class="stat-label">Ingest</div></div>
+    <div class="agent-node"><div id="node-2" class="node-icon">🔍</div><div class="stat-label">Auditor</div></div>
+    <div class="agent-node"><div id="node-3" class="node-icon">✨</div><div class="stat-label">Transformer</div></div>
+    <div class="agent-node"><div id="node-4" class="node-icon">🧠</div><div class="stat-label">Aggregator</div></div>
+  </div>
+  <div class="shard-monitor">
+    <h3 style="margin-bottom: 1rem; font-weight: 400; color: var(--text-dim)">SISA Model Shards</h3>
+    <div class="shard-grid" id="shard-grid">
+      <div class="shard-card active">Shard 1<br><small>v3.0.1</small></div>
+      <div class="shard-card active">Shard 2<br><small>v3.0.1</small></div>
+      <div class="shard-card active">Shard 3<br><small>v3.0.1</small></div>
+      <div class="shard-card active">Shard 4<br><small>v3.0.1</small></div>
+      <div class="shard-card active">Shard 5<br><small>v3.0.1</small></div>
+    </div>
+  </div>
+  <div class="console-input">
+    <textarea id="main-prompt" rows="2" placeholder="Send sensitive data to the secure pipeline..."></textarea>
+    <button class="btn-primary" onclick="triggerPipeline()">Execute Ingest</button>
+  </div>
+</div>
+<script>
+  async function triggerPipeline() {
+    const text = document.getElementById('main-prompt').value;
+    if(!text) { alert("Please enter a record first."); return; }
+    const nodes = [ document.getElementById('node-1'), document.getElementById('node-2'), document.getElementById('node-3'), document.getElementById('node-4') ];
+    nodes[0].style.borderColor = '#6366f1'; nodes[0].style.boxShadow = '0 0 25px #6366f1';
+    try {
+      const res = await fetch('http://127.0.0.1:8000/api/v1/ingest', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ records: [{id: "web_" + Date.now(), content: text}] })
+      });
+      if(res.ok) {
+          const data = await res.json();
+          for(let i=1; i < nodes.length; i++) {
+              await new Promise(r => setTimeout(r, 600));
+              nodes[i].style.borderColor = '#10b981'; nodes[i].style.boxShadow = '0 0 25px #10b981';
+          }
+          setTimeout(() => { alert("Sentinel-DS Pipeline Success: " + data.records_processed + " record(s) secured."); resetNodes(); }, 500);
+      } else { throw new Error("Backend connection failed."); }
+    } catch (error) {
+      console.error("Pipeline Error:", error);
+      nodes[0].style.borderColor = '#ef4444'; nodes[0].style.boxShadow = '0 0 25px #ef4444';
+      alert("Connection Refused. Make sure 'python engine.py' is running in the background.");
+    }
+  }
+  function resetNodes() { document.querySelectorAll('.node-icon').forEach(n => { n.style.borderColor = ''; n.style.boxShadow = ''; }); }
+</script>
+</body>
+</html>
