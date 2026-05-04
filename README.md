@@ -1,1 +1,1 @@
-# AI SDK - Provider Language Model Specification
+# AI SDK - Provider Implementation Utilities

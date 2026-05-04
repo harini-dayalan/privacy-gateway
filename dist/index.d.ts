@@ -1,1171 +1,646 @@
-import { JSONSchema7 } from 'json-schema';
-export { JSONSchema7, JSONSchema7Definition } from 'json-schema';
+import { LanguageModelV3FunctionTool, LanguageModelV3ProviderTool, ImageModelV3File, AISDKError, JSONSchema7, JSONParseError, TypeValidationError, JSONValue, APICallError, LanguageModelV3Prompt, SharedV3ProviderOptions, SharedV3ProviderMetadata, TypeValidationContext } from '@ai-sdk/provider';
+import { StandardSchemaV1, StandardJSONSchemaV1 } from '@standard-schema/spec';
+export * from '@standard-schema/spec';
+import * as z3 from 'zod/v3';
+import * as z4 from 'zod/v4';
+export { EventSourceMessage, EventSourceParserStream } from 'eventsource-parser/stream';
 
-type SharedV3Headers = Record<string, string>;
-
-/**
- * A JSON value can be a string, number, boolean, object, array, or null.
- * JSON values can be serialized and deserialized by the JSON.stringify and JSON.parse methods.
- */
-type JSONValue = null | string | number | boolean | JSONObject | JSONArray;
-type JSONObject = {
-    [key: string]: JSONValue | undefined;
-};
-type JSONArray = JSONValue[];
+declare function combineHeaders(...headers: Array<Record<string, string | undefined> | undefined>): Record<string, string | undefined>;
 
 /**
- * Additional provider-specific metadata.
- * Metadata are additional outputs from the provider.
- * They are passed through to the provider from the AI SDK
- * and enable provider-specific functionality
- * that can be fully encapsulated in the provider.
+ * Converts an AsyncIterator to a ReadableStream.
  *
- * This enables us to quickly ship provider-specific functionality
- * without affecting the core AI SDK.
- *
- * The outer record is keyed by the provider name, and the inner
- * record is keyed by the provider-specific metadata key.
- *
- * ```ts
- * {
- *   "anthropic": {
- *     "cacheControl": { "type": "ephemeral" }
- *   }
- * }
- * ```
+ * @template T - The type of elements produced by the AsyncIterator.
+ * @param { <T>} iterator - The AsyncIterator to convert.
+ * @returns {ReadableStream<T>} - A ReadableStream that provides the same data as the AsyncIterator.
  */
-type SharedV3ProviderMetadata = Record<string, JSONObject>;
+declare function convertAsyncIteratorToReadableStream<T>(iterator: AsyncIterator<T>): ReadableStream<T>;
 
 /**
- * Additional provider-specific options.
- * Options are additional input to the provider.
- * They are passed through to the provider from the AI SDK
- * and enable provider-specific functionality
- * that can be fully encapsulated in the provider.
- *
- * This enables us to quickly ship provider-specific functionality
- * without affecting the core AI SDK.
- *
- * The outer record is keyed by the provider name, and the inner
- * record is keyed by the provider-specific metadata key.
- *
- * ```ts
- * {
- *   "anthropic": {
- *     "cacheControl": { "type": "ephemeral" }
- *   }
- * }
- * ```
+ * Interface for mapping between custom tool names and provider tool names.
  */
-type SharedV3ProviderOptions = Record<string, JSONObject>;
+interface ToolNameMapping {
+    /**
+     * Maps a custom tool name (used by the client) to the provider's tool name.
+     * If the custom tool name does not have a mapping, returns the input name.
+     *
+     * @param customToolName - The custom name of the tool defined by the client.
+     * @returns The corresponding provider tool name, or the input name if not mapped.
+     */
+    toProviderToolName: (customToolName: string) => string;
+    /**
+     * Maps a provider tool name to the custom tool name used by the client.
+     * If the provider tool name does not have a mapping, returns the input name.
+     *
+     * @param providerToolName - The name of the tool as understood by the provider.
+     * @returns The corresponding custom tool name, or the input name if not mapped.
+     */
+    toCustomToolName: (providerToolName: string) => string;
+}
+/**
+ * @param tools - Tools that were passed to the language model.
+ * @param providerToolNames - Maps the provider tool ids to the provider tool names.
+ */
+declare function createToolNameMapping({ tools, providerToolNames, resolveProviderToolName, }: {
+    /**
+     * Tools that were passed to the language model.
+     */
+    tools: Array<LanguageModelV3FunctionTool | LanguageModelV3ProviderTool> | undefined;
+    /**
+     * Maps the provider tool ids to the provider tool names.
+     */
+    providerToolNames: Record<`${string}.${string}`, string>;
+    /**
+     * Optional resolver for provider tool names that cannot be represented as
+     * static id -> name mappings (e.g. dynamic provider names).
+     */
+    resolveProviderToolName?: (tool: LanguageModelV3ProviderTool) => string | undefined;
+}): ToolNameMapping;
 
 /**
- * Warning from the model.
- *
- * For example, that certain features are unsupported or compatibility
- * functionality is used (which might lead to suboptimal results).
+ * Creates a Promise that resolves after a specified delay
+ * @param delayInMs - The delay duration in milliseconds. If null or undefined, resolves immediately.
+ * @param signal - Optional AbortSignal to cancel the delay
+ * @returns A Promise that resolves after the specified delay
+ * @throws {DOMException} When the signal is aborted
  */
-type SharedV3Warning = {
-    /**
-     * A feature is not supported by the model.
-     */
-    type: 'unsupported';
-    /**
-     * The feature that is not supported.
-     */
-    feature: string;
-    /**
-     * Additional details about the warning.
-     */
-    details?: string;
-} | {
-    /**
-     * A compatibility feature is used that might lead to suboptimal results.
-     */
-    type: 'compatibility';
-    /**
-     * The feature that is used in a compatibility mode.
-     */
-    feature: string;
-    /**
-     * Additional details about the warning.
-     */
-    details?: string;
-} | {
-    /**
-     * Other warning.
-     */
-    type: 'other';
-    /**
-     * The message of the warning.
-     */
-    message: string;
-};
-
-type SharedV2Headers = Record<string, string>;
-
-/**
- * Additional provider-specific metadata.
- * Metadata are additional outputs from the provider.
- * They are passed through to the provider from the AI SDK
- * and enable provider-specific functionality
- * that can be fully encapsulated in the provider.
- *
- * This enables us to quickly ship provider-specific functionality
- * without affecting the core AI SDK.
- *
- * The outer record is keyed by the provider name, and the inner
- * record is keyed by the provider-specific metadata key.
- *
- * ```ts
- * {
- *   "anthropic": {
- *     "cacheControl": { "type": "ephemeral" }
- *   }
- * }
- * ```
- */
-type SharedV2ProviderMetadata = Record<string, Record<string, JSONValue>>;
-
-/**
- * Additional provider-specific options.
- * Options are additional input to the provider.
- * They are passed through to the provider from the AI SDK
- * and enable provider-specific functionality
- * that can be fully encapsulated in the provider.
- *
- * This enables us to quickly ship provider-specific functionality
- * without affecting the core AI SDK.
- *
- * The outer record is keyed by the provider name, and the inner
- * record is keyed by the provider-specific metadata key.
- *
- * ```ts
- * {
- *   "anthropic": {
- *     "cacheControl": { "type": "ephemeral" }
- *   }
- * }
- * ```
- */
-type SharedV2ProviderOptions = Record<string, Record<string, JSONValue>>;
-
-type EmbeddingModelV3CallOptions = {
-    /**
-     * List of text values to generate embeddings for.
-     */
-    values: Array<string>;
-    /**
-     * Abort signal for cancelling the operation.
-     */
+declare function delay(delayInMs?: number | null, options?: {
     abortSignal?: AbortSignal;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: SharedV3Headers;
-};
+}): Promise<void>;
 
 /**
- * An embedding is a vector, i.e. an array of numbers.
- * It is e.g. used to represent a text as a vector of word embeddings.
+ * Delayed promise. It is only constructed once the value is accessed.
+ * This is useful to avoid unhandled promise rejections when the promise is created
+ * but not accessed.
  */
-type EmbeddingModelV3Embedding = Array<number>;
-
-/**
- * The result of a embedding model doEmbed call.
- */
-type EmbeddingModelV3Result = {
-    /**
-     * Generated embeddings. They are in the same order as the input values.
-     */
-    embeddings: Array<EmbeddingModelV3Embedding>;
-    /**
-     * Token usage. We only have input tokens for embeddings.
-     */
-    usage?: {
-        tokens: number;
-    };
-    /**
-     * Additional provider-specific metadata. They are passed through
-     * from the provider to the AI SDK and enable provider-specific
-     * results that can be fully encapsulated in the provider.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-    /**
-     * Optional response information for debugging purposes.
-     */
-    response?: {
-        /**
-         * Response headers.
-         */
-        headers?: SharedV3Headers;
-        /**
-         * The response body.
-         */
-        body?: unknown;
-    };
-    /**
-     * Warnings for the call, e.g. unsupported settings.
-     */
-    warnings: Array<SharedV3Warning>;
-};
-
-/**
- * Specification for an embedding model that implements the embedding model
- * interface version 3.
- *
- * It is specific to text embeddings.
- */
-type EmbeddingModelV3 = {
-    /**
-     * The embedding model must specify which embedding model interface
-     * version it implements. This will allow us to evolve the embedding
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Limit of how many embeddings can be generated in a single API call.
-     *
-     * Use Infinity for models that do not have a limit.
-     */
-    readonly maxEmbeddingsPerCall: PromiseLike<number | undefined> | number | undefined;
-    /**
-     * True if the model can handle multiple embedding calls in parallel.
-     */
-    readonly supportsParallelCalls: PromiseLike<boolean> | boolean;
-    /**
-     * Generates a list of embeddings for the given input text.
-     *
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     */
-    doEmbed(options: EmbeddingModelV3CallOptions): PromiseLike<EmbeddingModelV3Result>;
-};
-
-/**
- * An embedding is a vector, i.e. an array of numbers.
- * It is e.g. used to represent a text as a vector of word embeddings.
- */
-type EmbeddingModelV2Embedding = Array<number>;
-
-/**
- * Specification for an embedding model that implements the embedding model
- * interface version 2.
- *
- * VALUE is the type of the values that the model can embed.
- * This will allow us to go beyond text embeddings in the future,
- * e.g. to support image embeddings
- */
-type EmbeddingModelV2<VALUE> = {
-    /**
-     * The embedding model must specify which embedding model interface
-     * version it implements. This will allow us to evolve the embedding
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v2';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Limit of how many embeddings can be generated in a single API call.
-     *
-     * Use Infinity for models that do not have a limit.
-     */
-    readonly maxEmbeddingsPerCall: PromiseLike<number | undefined> | number | undefined;
-    /**
-     * True if the model can handle multiple embedding calls in parallel.
-     */
-    readonly supportsParallelCalls: PromiseLike<boolean> | boolean;
-    /**
-     * Generates a list of embeddings for the given input text.
-     *
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     */
-    doEmbed(options: {
-        /**
-         * List of values to embed.
-         */
-        values: Array<VALUE>;
-        /**
-         * Abort signal for cancelling the operation.
-         */
-        abortSignal?: AbortSignal;
-        /**
-         * Additional provider-specific options. They are passed through
-         * to the provider from the AI SDK and enable provider-specific
-         * functionality that can be fully encapsulated in the provider.
-         */
-        providerOptions?: SharedV2ProviderOptions;
-        /**
-         * Additional HTTP headers to be sent with the request.
-         * Only applicable for HTTP-based providers.
-         */
-        headers?: Record<string, string | undefined>;
-    }): PromiseLike<{
-        /**
-         * Generated embeddings. They are in the same order as the input values.
-         */
-        embeddings: Array<EmbeddingModelV2Embedding>;
-        /**
-         * Token usage. We only have input tokens for embeddings.
-         */
-        usage?: {
-            tokens: number;
-        };
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: SharedV2ProviderMetadata;
-        /**
-         * Optional response information for debugging purposes.
-         */
-        response?: {
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-            /**
-             * The response body.
-             */
-            body?: unknown;
-        };
-    }>;
-};
-
-declare const symbol$d: unique symbol;
-/**
- * Custom error class for AI SDK related errors.
- * @extends Error
- */
-declare class AISDKError extends Error {
-    private readonly [symbol$d];
-    /**
-     * The underlying cause of the error, if any.
-     */
-    readonly cause?: unknown;
-    /**
-     * Creates an AI SDK Error.
-     *
-     * @param {Object} params - The parameters for creating the error.
-     * @param {string} params.name - The name of the error.
-     * @param {string} params.message - The error message.
-     * @param {unknown} [params.cause] - The underlying cause of the error.
-     */
-    constructor({ name, message, cause, }: {
-        name: string;
-        message: string;
-        cause?: unknown;
-    });
-    /**
-     * Checks if the given error is an AI SDK Error.
-     * @param {unknown} error - The error to check.
-     * @returns {boolean} True if the error is an AI SDK Error, false otherwise.
-     */
-    static isInstance(error: unknown): error is AISDKError;
-    protected static hasMarker(error: unknown, marker: string): boolean;
+declare class DelayedPromise<T> {
+    private status;
+    private _promise;
+    private _resolve;
+    private _reject;
+    get promise(): Promise<T>;
+    resolve(value: T): void;
+    reject(error: unknown): void;
+    isResolved(): boolean;
+    isRejected(): boolean;
+    isPending(): boolean;
 }
 
-declare const symbol$c: unique symbol;
-declare class APICallError extends AISDKError {
-    private readonly [symbol$c];
+/**
+ * Extracts the headers from a response object and returns them as a key-value object.
+ *
+ * @param response - The response object to extract headers from.
+ * @returns The headers as a key-value object.
+ */
+declare function extractResponseHeaders(response: Response): {
+    [k: string]: string;
+};
+
+/**
+ * Convert an ImageModelV3File to a URL or data URI string.
+ *
+ * If the file is a URL, it returns the URL as-is.
+ * If the file is base64 data, it returns a data URI with the base64 data.
+ * If the file is a Uint8Array, it converts it to base64 and returns a data URI.
+ */
+declare function convertImageModelFileToDataUri(file: ImageModelV3File): string;
+
+/**
+ * Converts an input object to FormData for multipart/form-data requests.
+ *
+ * Handles the following cases:
+ * - `null` or `undefined` values are skipped
+ * - Arrays with a single element are appended as a single value
+ * - Arrays with multiple elements are appended with `[]` suffix (e.g., `image[]`)
+ *   unless `useArrayBrackets` is set to `false`
+ * - All other values are appended directly
+ *
+ * @param input - The input object to convert. Use a generic type for type validation.
+ * @param options - Optional configuration object.
+ * @param options.useArrayBrackets - Whether to add `[]` suffix for multi-element arrays.
+ *   Defaults to `true`. Set to `false` for APIs that expect repeated keys without brackets.
+ * @returns A FormData object containing the input values.
+ *
+ * @example
+ * ```ts
+ * type MyInput = {
+ *   model: string;
+ *   prompt: string;
+ *   images: Blob[];
+ * };
+ *
+ * const formData = convertToFormData<MyInput>({
+ *   model: 'gpt-image-1',
+ *   prompt: 'A cat',
+ *   images: [blob1, blob2],
+ * });
+ * ```
+ */
+declare function convertToFormData<T extends Record<string, unknown>>(input: T, options?: {
+    useArrayBrackets?: boolean;
+}): FormData;
+
+/**
+ * Download a file from a URL and return it as a Blob.
+ *
+ * @param url - The URL to download from.
+ * @param options - Optional settings for the download.
+ * @param options.maxBytes - Maximum allowed download size in bytes. Defaults to 100 MiB.
+ * @param options.abortSignal - An optional abort signal to cancel the download.
+ * @returns A Promise that resolves to the downloaded Blob.
+ *
+ * @throws DownloadError if the download fails or exceeds maxBytes.
+ */
+declare function downloadBlob(url: string, options?: {
+    maxBytes?: number;
+    abortSignal?: AbortSignal;
+}): Promise<Blob>;
+
+declare const symbol: unique symbol;
+declare class DownloadError extends AISDKError {
+    private readonly [symbol];
     readonly url: string;
-    readonly requestBodyValues: unknown;
     readonly statusCode?: number;
-    readonly responseHeaders?: Record<string, string>;
-    readonly responseBody?: string;
-    readonly isRetryable: boolean;
-    readonly data?: unknown;
-    constructor({ message, url, requestBodyValues, statusCode, responseHeaders, responseBody, cause, isRetryable, // server error
-    data, }: {
-        message: string;
+    readonly statusText?: string;
+    constructor({ url, statusCode, statusText, cause, message, }: {
         url: string;
-        requestBodyValues: unknown;
         statusCode?: number;
-        responseHeaders?: Record<string, string>;
-        responseBody?: string;
+        statusText?: string;
+        message?: string;
         cause?: unknown;
-        isRetryable?: boolean;
-        data?: unknown;
     });
-    static isInstance(error: unknown): error is APICallError;
+    static isInstance(error: unknown): error is DownloadError;
 }
 
-declare const symbol$b: unique symbol;
-declare class EmptyResponseBodyError extends AISDKError {
-    private readonly [symbol$b];
-    constructor({ message }?: {
-        message?: string;
-    });
-    static isInstance(error: unknown): error is EmptyResponseBodyError;
-}
+/**
+ * Default maximum download size: 2 GiB.
+ *
+ * `fetch().arrayBuffer()` has ~2x peak memory overhead (undici buffers the
+ * body internally, then creates the JS ArrayBuffer), so very large downloads
+ * risk exceeding the default V8 heap limit on 64-bit systems and terminating
+ * the process with an out-of-memory error.
+ *
+ * Setting this limit converts an unrecoverable OOM crash into a catchable
+ * `DownloadError`.
+ */
+declare const DEFAULT_MAX_DOWNLOAD_SIZE: number;
+/**
+ * Reads a fetch Response body with a size limit to prevent memory exhaustion.
+ *
+ * Checks the Content-Length header for early rejection, then reads the body
+ * incrementally via ReadableStream and aborts with a DownloadError when the
+ * limit is exceeded.
+ *
+ * @param response - The fetch Response to read.
+ * @param url - The URL being downloaded (used in error messages).
+ * @param maxBytes - Maximum allowed bytes. Defaults to DEFAULT_MAX_DOWNLOAD_SIZE.
+ * @returns A Uint8Array containing the response body.
+ * @throws DownloadError if the response exceeds maxBytes.
+ */
+declare function readResponseWithSizeLimit({ response, url, maxBytes, }: {
+    response: Response;
+    url: string;
+    maxBytes?: number;
+}): Promise<Uint8Array>;
+
+/**
+ * Fetch function type (standardizes the version of fetch used).
+ */
+type FetchFunction = typeof globalThis.fetch;
+
+/**
+ * Creates an ID generator.
+ * The total length of the ID is the sum of the prefix, separator, and random part length.
+ * Not cryptographically secure.
+ *
+ * @param alphabet - The alphabet to use for the ID. Default: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'.
+ * @param prefix - The prefix of the ID to generate. Optional.
+ * @param separator - The separator between the prefix and the random part of the ID. Default: '-'.
+ * @param size - The size of the random part of the ID to generate. Default: 16.
+ */
+declare const createIdGenerator: ({ prefix, size, alphabet, separator, }?: {
+    prefix?: string;
+    separator?: string;
+    size?: number;
+    alphabet?: string;
+}) => IdGenerator;
+/**
+ * A function that generates an ID.
+ */
+type IdGenerator = () => string;
+/**
+ * Generates a 16-character random string to use for IDs.
+ * Not cryptographically secure.
+ */
+declare const generateId: IdGenerator;
 
 declare function getErrorMessage(error: unknown | undefined): string;
 
-declare const symbol$a: unique symbol;
 /**
- * A function argument is invalid.
+ * Used to mark schemas so we can support both Zod and custom schemas.
  */
-declare class InvalidArgumentError extends AISDKError {
-    private readonly [symbol$a];
-    readonly argument: string;
-    constructor({ message, cause, argument, }: {
-        argument: string;
-        message: string;
-        cause?: unknown;
-    });
-    static isInstance(error: unknown): error is InvalidArgumentError;
-}
-
-declare const symbol$9: unique symbol;
-/**
- * A prompt is invalid. This error should be thrown by providers when they cannot
- * process a prompt.
- */
-declare class InvalidPromptError extends AISDKError {
-    private readonly [symbol$9];
-    readonly prompt: unknown;
-    constructor({ prompt, message, cause, }: {
-        prompt: unknown;
-        message: string;
-        cause?: unknown;
-    });
-    static isInstance(error: unknown): error is InvalidPromptError;
-}
-
-declare const symbol$8: unique symbol;
-/**
- * Server returned a response with invalid data content.
- * This should be thrown by providers when they cannot parse the response from the API.
- */
-declare class InvalidResponseDataError extends AISDKError {
-    private readonly [symbol$8];
-    readonly data: unknown;
-    constructor({ data, message, }: {
-        data: unknown;
-        message?: string;
-    });
-    static isInstance(error: unknown): error is InvalidResponseDataError;
-}
-
-declare const symbol$7: unique symbol;
-declare class JSONParseError extends AISDKError {
-    private readonly [symbol$7];
-    readonly text: string;
-    constructor({ text, cause }: {
-        text: string;
-        cause: unknown;
-    });
-    static isInstance(error: unknown): error is JSONParseError;
-}
-
-declare const symbol$6: unique symbol;
-declare class LoadAPIKeyError extends AISDKError {
-    private readonly [symbol$6];
-    constructor({ message }: {
-        message: string;
-    });
-    static isInstance(error: unknown): error is LoadAPIKeyError;
-}
-
-declare const symbol$5: unique symbol;
-declare class LoadSettingError extends AISDKError {
-    private readonly [symbol$5];
-    constructor({ message }: {
-        message: string;
-    });
-    static isInstance(error: unknown): error is LoadSettingError;
-}
-
-declare const symbol$4: unique symbol;
-/**
- * Thrown when the AI provider fails to generate any content.
- */
-declare class NoContentGeneratedError extends AISDKError {
-    private readonly [symbol$4];
-    constructor({ message, }?: {
-        message?: string;
-    });
-    static isInstance(error: unknown): error is NoContentGeneratedError;
-}
-
-declare const symbol$3: unique symbol;
-declare class NoSuchModelError extends AISDKError {
-    private readonly [symbol$3];
-    readonly modelId: string;
-    readonly modelType: 'languageModel' | 'embeddingModel' | 'imageModel' | 'transcriptionModel' | 'speechModel' | 'rerankingModel' | 'videoModel';
-    constructor({ errorName, modelId, modelType, message, }: {
-        errorName?: string;
-        modelId: string;
-        modelType: 'languageModel' | 'embeddingModel' | 'imageModel' | 'transcriptionModel' | 'speechModel' | 'rerankingModel' | 'videoModel';
-        message?: string;
-    });
-    static isInstance(error: unknown): error is NoSuchModelError;
-}
-
-declare const symbol$2: unique symbol;
-declare class TooManyEmbeddingValuesForCallError extends AISDKError {
-    private readonly [symbol$2];
-    readonly provider: string;
-    readonly modelId: string;
-    readonly maxEmbeddingsPerCall: number;
-    readonly values: Array<unknown>;
-    constructor(options: {
-        provider: string;
-        modelId: string;
-        maxEmbeddingsPerCall: number;
-        values: Array<unknown>;
-    });
-    static isInstance(error: unknown): error is TooManyEmbeddingValuesForCallError;
-}
-
-declare const symbol$1: unique symbol;
-interface TypeValidationContext {
-    /**
-     * Field path in dot notation (e.g., "message.metadata", "message.parts[3].data")
-     */
-    field?: string;
-    /**
-     * Entity name (e.g., tool name, data type name)
-     */
-    entityName?: string;
-    /**
-     * Entity identifier (e.g., message ID, tool call ID)
-     */
-    entityId?: string;
-}
-declare class TypeValidationError extends AISDKError {
-    private readonly [symbol$1];
-    readonly value: unknown;
-    readonly context?: TypeValidationContext;
-    constructor({ value, cause, context, }: {
-        value: unknown;
-        cause: unknown;
-        context?: TypeValidationContext;
-    });
-    static isInstance(error: unknown): error is TypeValidationError;
-    /**
-     * Wraps an error into a TypeValidationError.
-     * If the cause is already a TypeValidationError with the same value and context, it returns the cause.
-     * Otherwise, it creates a new TypeValidationError.
-     *
-     * @param {Object} params - The parameters for wrapping the error.
-     * @param {unknown} params.value - The value that failed validation.
-     * @param {unknown} params.cause - The original error or cause of the validation failure.
-     * @param {TypeValidationContext} params.context - Optional context about what is being validated.
-     * @returns {TypeValidationError} A TypeValidationError instance.
-     */
-    static wrap({ value, cause, context, }: {
-        value: unknown;
-        cause: unknown;
-        context?: TypeValidationContext;
-    }): TypeValidationError;
-}
-
-declare const symbol: unique symbol;
-declare class UnsupportedFunctionalityError extends AISDKError {
-    private readonly [symbol];
-    readonly functionality: string;
-    constructor({ functionality, message, }: {
-        functionality: string;
-        message?: string;
-    });
-    static isInstance(error: unknown): error is UnsupportedFunctionalityError;
-}
-
-declare function isJSONValue(value: unknown): value is JSONValue;
-declare function isJSONArray(value: unknown): value is JSONArray;
-declare function isJSONObject(value: unknown): value is JSONObject;
-
-/**
- * Usage information for an image model call.
- */
-type ImageModelV3Usage = {
-    /**
-     * The number of input (prompt) tokens used.
-     */
-    inputTokens: number | undefined;
-    /**
-     * The number of output tokens used, if reported by the provider.
-     */
-    outputTokens: number | undefined;
-    /**
-     * The total number of tokens as reported by the provider.
-     */
-    totalTokens: number | undefined;
-};
-
-/**
- * An image file that can be used for image editing or variation generation.
- */
-type ImageModelV3File = {
-    type: 'file';
-    /**
-     * The IANA media type of the file, e.g. `image/png`. Any string is supported.
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Generated file data as base64 encoded strings or binary data.
-     *
-     * The file data should be returned without any unnecessary conversion.
-     * If the API returns base64 encoded strings, the file data should be returned
-     * as base64 encoded strings. If the API returns binary data, the file data should
-     * be returned as binary data.
-     */
-    data: string | Uint8Array;
-    /**
-     * Optional provider-specific metadata for the file part.
-     */
-    providerOptions?: SharedV3ProviderMetadata;
+declare const schemaSymbol: unique symbol;
+type ValidationResult<OBJECT> = {
+    success: true;
+    value: OBJECT;
 } | {
-    type: 'url';
+    success: false;
+    error: Error;
+};
+type Schema<OBJECT = unknown> = {
     /**
-     * The URL of the image file.
+     * Used to mark schemas so we can support both Zod and custom schemas.
      */
+    [schemaSymbol]: true;
+    /**
+     * Schema type for inference.
+     */
+    _type: OBJECT;
+    /**
+     * Optional. Validates that the structure of a value matches this schema,
+     * and returns a typed version of the value if it does.
+     */
+    readonly validate?: (value: unknown) => ValidationResult<OBJECT> | PromiseLike<ValidationResult<OBJECT>>;
+    /**
+     * The JSON Schema for the schema. It is passed to the providers.
+     */
+    readonly jsonSchema: JSONSchema7 | PromiseLike<JSONSchema7>;
+};
+/**
+ * Creates a schema with deferred creation.
+ * This is important to reduce the startup time of the library
+ * and to avoid initializing unused validators.
+ *
+ * @param createValidator A function that creates a schema.
+ * @returns A function that returns a schema.
+ */
+declare function lazySchema<SCHEMA>(createSchema: () => Schema<SCHEMA>): LazySchema<SCHEMA>;
+type LazySchema<SCHEMA> = () => Schema<SCHEMA>;
+type ZodSchema<SCHEMA = any> = z3.Schema<SCHEMA, z3.ZodTypeDef, any> | z4.core.$ZodType<SCHEMA, any>;
+type StandardSchema<SCHEMA = any> = StandardSchemaV1<unknown, SCHEMA> & StandardJSONSchemaV1<unknown, SCHEMA>;
+type FlexibleSchema<SCHEMA = any> = Schema<SCHEMA> | LazySchema<SCHEMA> | ZodSchema<SCHEMA> | StandardSchema<SCHEMA>;
+type InferSchema<SCHEMA> = SCHEMA extends ZodSchema<infer T> ? T : SCHEMA extends StandardSchema<infer T> ? T : SCHEMA extends LazySchema<infer T> ? T : SCHEMA extends Schema<infer T> ? T : never;
+/**
+ * Create a schema using a JSON Schema.
+ *
+ * @param jsonSchema The JSON Schema for the schema.
+ * @param options.validate Optional. A validation function for the schema.
+ */
+declare function jsonSchema<OBJECT = unknown>(jsonSchema: JSONSchema7 | PromiseLike<JSONSchema7> | (() => JSONSchema7 | PromiseLike<JSONSchema7>), { validate, }?: {
+    validate?: (value: unknown) => ValidationResult<OBJECT> | PromiseLike<ValidationResult<OBJECT>>;
+}): Schema<OBJECT>;
+declare function asSchema<OBJECT>(schema: FlexibleSchema<OBJECT> | undefined): Schema<OBJECT>;
+declare function zodSchema<OBJECT>(zodSchema: z4.core.$ZodType<OBJECT, any> | z3.Schema<OBJECT, z3.ZodTypeDef, any>, options?: {
+    /**
+     * Enables support for references in the schema.
+     * This is required for recursive schemas, e.g. with `z.lazy`.
+     * However, not all language models and providers support such references.
+     * Defaults to `false`.
+     */
+    useReferences?: boolean;
+}): Schema<OBJECT>;
+
+/**
+ * Parses a JSON string into an unknown object.
+ *
+ * @param text - The JSON string to parse.
+ * @returns {JSONValue} - The parsed JSON object.
+ */
+declare function parseJSON(options: {
+    text: string;
+    schema?: undefined;
+}): Promise<JSONValue>;
+/**
+ * Parses a JSON string into a strongly-typed object using the provided schema.
+ *
+ * @template T - The type of the object to parse the JSON into.
+ * @param {string} text - The JSON string to parse.
+ * @param {Validator<T>} schema - The schema to use for parsing the JSON.
+ * @returns {Promise<T>} - The parsed object.
+ */
+declare function parseJSON<T>(options: {
+    text: string;
+    schema: FlexibleSchema<T>;
+}): Promise<T>;
+type ParseResult<T> = {
+    success: true;
+    value: T;
+    rawValue: unknown;
+} | {
+    success: false;
+    error: JSONParseError | TypeValidationError;
+    rawValue: unknown;
+};
+/**
+ * Safely parses a JSON string and returns the result as an object of type `unknown`.
+ *
+ * @param text - The JSON string to parse.
+ * @returns {Promise<object>} Either an object with `success: true` and the parsed data, or an object with `success: false` and the error that occurred.
+ */
+declare function safeParseJSON(options: {
+    text: string;
+    schema?: undefined;
+}): Promise<ParseResult<JSONValue>>;
+/**
+ * Safely parses a JSON string into a strongly-typed object, using a provided schema to validate the object.
+ *
+ * @template T - The type of the object to parse the JSON into.
+ * @param {string} text - The JSON string to parse.
+ * @param {Validator<T>} schema - The schema to use for parsing the JSON.
+ * @returns An object with either a `success` flag and the parsed and typed data, or a `success` flag and an error object.
+ */
+declare function safeParseJSON<T>(options: {
+    text: string;
+    schema: FlexibleSchema<T>;
+}): Promise<ParseResult<T>>;
+declare function isParsableJson(input: string): boolean;
+
+type ResponseHandler<RETURN_TYPE> = (options: {
     url: string;
-    /**
-     * Optional provider-specific metadata for the file part.
-     */
-    providerOptions?: SharedV3ProviderMetadata;
-};
+    requestBodyValues: unknown;
+    response: Response;
+}) => PromiseLike<{
+    value: RETURN_TYPE;
+    rawValue?: unknown;
+    responseHeaders?: Record<string, string>;
+}>;
+declare const createJsonErrorResponseHandler: <T>({ errorSchema, errorToMessage, isRetryable, }: {
+    errorSchema: FlexibleSchema<T>;
+    errorToMessage: (error: T) => string;
+    isRetryable?: (response: Response, error?: T) => boolean;
+}) => ResponseHandler<APICallError>;
+declare const createEventSourceResponseHandler: <T>(chunkSchema: FlexibleSchema<T>) => ResponseHandler<ReadableStream<ParseResult<T>>>;
+declare const createJsonResponseHandler: <T>(responseSchema: FlexibleSchema<T>) => ResponseHandler<T>;
+declare const createBinaryResponseHandler: () => ResponseHandler<Uint8Array>;
+declare const createStatusCodeErrorResponseHandler: () => ResponseHandler<APICallError>;
 
-type ImageModelV3CallOptions = {
-    /**
-     * Prompt for the image generation. Some operations, like upscaling, may not require a prompt.
-     */
-    prompt: string | undefined;
-    /**
-     * Number of images to generate.
-     */
-    n: number;
-    /**
-     * Size of the images to generate.
-     * Must have the format `{width}x{height}`.
-     * `undefined` will use the provider's default size.
-     */
-    size: `${number}x${number}` | undefined;
-    /**
-     * Aspect ratio of the images to generate.
-     * Must have the format `{width}:{height}`.
-     * `undefined` will use the provider's default aspect ratio.
-     */
-    aspectRatio: `${number}:${number}` | undefined;
-    /**
-     * Seed for the image generation.
-     * `undefined` will use the provider's default seed.
-     */
-    seed: number | undefined;
-    /**
-     * Array of images for image editing or variation generation.
-     * The images should be provided as base64 encoded strings or binary data.
-     */
-    files: ImageModelV3File[] | undefined;
-    /**
-     * Mask image for inpainting operations.
-     * The mask should be provided as base64 encoded strings or binary data.
-     */
-    mask: ImageModelV3File | undefined;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     *
-     * ```ts
-     * {
-     *   "openai": {
-     *     "style": "vivid"
-     *   }
-     * }
-     * ```
-     */
-    providerOptions: SharedV3ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
+declare const getFromApi: <T>({ url, headers, successfulResponseHandler, failedResponseHandler, abortSignal, fetch, }: {
+    url: string;
     headers?: Record<string, string | undefined>;
-};
-
-type ImageModelV3ProviderMetadata = Record<string, {
-    images: JSONArray;
-} & JSONValue>;
-type GetMaxImagesPerCallFunction$1 = (options: {
-    modelId: string;
-}) => PromiseLike<number | undefined> | number | undefined;
-/**
- * Image generation model specification version 3.
- */
-type ImageModelV3 = {
-    /**
-     * The image model must specify which image model interface
-     * version it implements. This will allow us to evolve the image
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Limit of how many images can be generated in a single API call.
-     * Can be set to a number for a fixed limit, to undefined to use
-     * the global limit, or a function that returns a number or undefined,
-     * optionally as a promise.
-     */
-    readonly maxImagesPerCall: number | undefined | GetMaxImagesPerCallFunction$1;
-    /**
-     * Generates an array of images.
-     */
-    doGenerate(options: ImageModelV3CallOptions): PromiseLike<{
-        /**
-         * Generated images as base64 encoded strings or binary data.
-         * The images should be returned without any unnecessary conversion.
-         * If the API returns base64 encoded strings, the images should be returned
-         * as base64 encoded strings. If the API returns binary data, the images should
-         * be returned as binary data.
-         */
-        images: Array<string> | Array<Uint8Array>;
-        /**
-         * Warnings for the call, e.g. unsupported features.
-         */
-        warnings: Array<SharedV3Warning>;
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         *
-         * The outer record is keyed by the provider name, and the inner
-         * record is provider-specific metadata. It always includes an
-         * `images` key with image-specific metadata
-         *
-         * ```ts
-         * {
-         * "openai": {
-         * "images": ["revisedPrompt": "Revised prompt here."]
-         * }
-         * }
-         * ```
-         */
-        providerMetadata?: ImageModelV3ProviderMetadata;
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers: Record<string, string> | undefined;
-        };
-        /**
-         * Optional token usage for the image generation call (if the provider reports it).
-         */
-        usage?: ImageModelV3Usage;
-    }>;
-};
-
-type ImageModelV2CallOptions = {
-    /**
-     * Prompt for the image generation.
-     */
-    prompt: string;
-    /**
-     * Number of images to generate.
-     */
-    n: number;
-    /**
-     * Size of the images to generate.
-     * Must have the format `{width}x{height}`.
-     * `undefined` will use the provider's default size.
-     */
-    size: `${number}x${number}` | undefined;
-    /**
-     * Aspect ratio of the images to generate.
-     * Must have the format `{width}:{height}`.
-     * `undefined` will use the provider's default aspect ratio.
-     */
-    aspectRatio: `${number}:${number}` | undefined;
-    /**
-     * Seed for the image generation.
-     * `undefined` will use the provider's default seed.
-     */
-    seed: number | undefined;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     * ```ts
-     * {
-     * "openai": {
-     * "style": "vivid"
-     * }
-     * }
-     * ```
-     */
-    providerOptions: SharedV2ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
+    failedResponseHandler: ResponseHandler<Error>;
+    successfulResponseHandler: ResponseHandler<T>;
     abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
+    fetch?: FetchFunction;
+}) => Promise<{
+    value: T;
+    rawValue?: unknown;
+    responseHeaders?: Record<string, string>;
+}>;
+
+declare function getRuntimeEnvironmentUserAgent(globalThisAny?: any): string;
+
+declare function injectJsonInstructionIntoMessages({ messages, schema, schemaPrefix, schemaSuffix, }: {
+    messages: LanguageModelV3Prompt;
+    schema?: JSONSchema7;
+    schemaPrefix?: string;
+    schemaSuffix?: string;
+}): LanguageModelV3Prompt;
+
+declare function isAbortError(error: unknown): error is Error;
+
+/**
+ * Type guard that checks whether a value is not `null` or `undefined`.
+ *
+ * @template T - The type of the value to check.
+ * @param value - The value to check.
+ * @returns `true` if the value is neither `null` nor `undefined`, otherwise `false`.
+ */
+declare function isNonNullable<T>(value: T | undefined | null): value is NonNullable<T>;
+
+/**
+ * Checks if the given URL is supported natively by the model.
+ *
+ * @param mediaType - The media type of the URL. Case-sensitive.
+ * @param url - The URL to check.
+ * @param supportedUrls - A record where keys are case-sensitive media types (or '*')
+ *                        and values are arrays of RegExp patterns for URLs.
+ *
+ * @returns `true` if the URL matches a pattern under the specific media type
+ *          or the wildcard '*', `false` otherwise.
+ */
+declare function isUrlSupported({ mediaType, url, supportedUrls, }: {
+    mediaType: string;
+    url: string;
+    supportedUrls: Record<string, RegExp[]>;
+}): boolean;
+
+declare function loadApiKey({ apiKey, environmentVariableName, apiKeyParameterName, description, }: {
+    apiKey: string | undefined;
+    environmentVariableName: string;
+    apiKeyParameterName?: string;
+    description: string;
+}): string;
+
+/**
+ * Loads an optional `string` setting from the environment or a parameter.
+ *
+ * @param settingValue - The setting value.
+ * @param environmentVariableName - The environment variable name.
+ * @returns The setting value.
+ */
+declare function loadOptionalSetting({ settingValue, environmentVariableName, }: {
+    settingValue: string | undefined;
+    environmentVariableName: string;
+}): string | undefined;
+
+/**
+ * Loads a `string` setting from the environment or a parameter.
+ *
+ * @param settingValue - The setting value.
+ * @param environmentVariableName - The environment variable name.
+ * @param settingName - The setting name.
+ * @param description - The description of the setting.
+ * @returns The setting value.
+ */
+declare function loadSetting({ settingValue, environmentVariableName, settingName, description, }: {
+    settingValue: string | undefined;
+    environmentVariableName: string;
+    settingName: string;
+    description: string;
+}): string;
+
+type MaybePromiseLike<T> = T | PromiseLike<T>;
+
+/**
+ * Maps a media type to its corresponding file extension.
+ * It was originally introduced to set a filename for audio file uploads
+ * in https://github.com/vercel/ai/pull/8159.
+ *
+ * @param mediaType The media type to map.
+ * @returns The corresponding file extension
+ * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types/Common_types
+ */
+declare function mediaTypeToExtension(mediaType: string): string;
+
+/**
+ * Normalizes different header inputs into a plain record with lower-case keys.
+ * Entries with `undefined` or `null` values are removed.
+ *
+ * @param headers - Input headers (`Headers`, tuples array, plain record) to normalize.
+ * @returns A record containing the normalized header entries.
+ */
+declare function normalizeHeaders(headers: HeadersInit | Record<string, string | undefined> | Array<[string, string | undefined]> | undefined): Record<string, string>;
+
+/**
+ * Parses a JSON event stream into a stream of parsed JSON objects.
+ */
+declare function parseJsonEventStream<T>({ stream, schema, }: {
+    stream: ReadableStream<Uint8Array>;
+    schema: FlexibleSchema<T>;
+}): ReadableStream<ParseResult<T>>;
+
+declare function parseProviderOptions<OPTIONS>({ provider, providerOptions, schema, }: {
+    provider: string;
+    providerOptions: Record<string, unknown> | undefined;
+    schema: FlexibleSchema<OPTIONS>;
+}): Promise<OPTIONS | undefined>;
+
+declare const postJsonToApi: <T>({ url, headers, body, failedResponseHandler, successfulResponseHandler, abortSignal, fetch, }: {
+    url: string;
     headers?: Record<string, string | undefined>;
-};
+    body: unknown;
+    failedResponseHandler: ResponseHandler<APICallError>;
+    successfulResponseHandler: ResponseHandler<T>;
+    abortSignal?: AbortSignal;
+    fetch?: FetchFunction;
+}) => Promise<{
+    value: T;
+    rawValue?: unknown;
+    responseHeaders?: Record<string, string>;
+}>;
+declare const postFormDataToApi: <T>({ url, headers, formData, failedResponseHandler, successfulResponseHandler, abortSignal, fetch, }: {
+    url: string;
+    headers?: Record<string, string | undefined>;
+    formData: FormData;
+    failedResponseHandler: ResponseHandler<APICallError>;
+    successfulResponseHandler: ResponseHandler<T>;
+    abortSignal?: AbortSignal;
+    fetch?: FetchFunction;
+}) => Promise<{
+    value: T;
+    rawValue?: unknown;
+    responseHeaders?: Record<string, string>;
+}>;
+declare const postToApi: <T>({ url, headers, body, successfulResponseHandler, failedResponseHandler, abortSignal, fetch, }: {
+    url: string;
+    headers?: Record<string, string | undefined>;
+    body: {
+        content: string | FormData | Uint8Array;
+        values: unknown;
+    };
+    failedResponseHandler: ResponseHandler<Error>;
+    successfulResponseHandler: ResponseHandler<T>;
+    abortSignal?: AbortSignal;
+    fetch?: FetchFunction;
+}) => Promise<{
+    value: T;
+    rawValue?: unknown;
+    responseHeaders?: Record<string, string>;
+}>;
 
 /**
- * Warning from the model provider for this call. The call will proceed, but e.g.
- * some settings might not be supported, which can lead to suboptimal results.
+ * Data content. Can either be a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer.
  */
-type ImageModelV2CallWarning = {
-    type: 'unsupported-setting';
-    setting: keyof ImageModelV2CallOptions;
-    details?: string;
-} | {
-    type: 'other';
-    message: string;
-};
-
-type ImageModelV2ProviderMetadata = Record<string, {
-    images: JSONArray;
-} & JSONValue>;
-type GetMaxImagesPerCallFunction = (options: {
-    modelId: string;
-}) => PromiseLike<number | undefined> | number | undefined;
-/**
- * Image generation model specification version 2.
- */
-type ImageModelV2 = {
-    /**
-     * The image model must specify which image model interface
-     * version it implements. This will allow us to evolve the image
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v2';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Limit of how many images can be generated in a single API call.
-     * Can be set to a number for a fixed limit, to undefined to use
-     * the global limit, or a function that returns a number or undefined,
-     * optionally as a promise.
-     */
-    readonly maxImagesPerCall: number | undefined | GetMaxImagesPerCallFunction;
-    /**
-     * Generates an array of images.
-     */
-    doGenerate(options: ImageModelV2CallOptions): PromiseLike<{
-        /**
-         * Generated images as base64 encoded strings or binary data.
-         * The images should be returned without any unnecessary conversion.
-         * If the API returns base64 encoded strings, the images should be returned
-         * as base64 encoded strings. If the API returns binary data, the images should
-         * be returned as binary data.
-         */
-        images: Array<string> | Array<Uint8Array>;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<ImageModelV2CallWarning>;
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         *
-         * The outer record is keyed by the provider name, and the inner
-         * record is provider-specific metadata. It always includes an
-         * `images` key with image-specific metadata
-         *
-         * ```ts
-         * {
-         * "openai": {
-         * "images": ["revisedPrompt": "Revised prompt here."]
-         * }
-         * }
-         * ```
-         */
-        providerMetadata?: ImageModelV2ProviderMetadata;
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers: Record<string, string> | undefined;
-        };
-    }>;
-};
+type DataContent = string | Uint8Array | ArrayBuffer | Buffer;
 
 /**
- * Middleware for ImageModelV3.
- * This type defines the structure for middleware that can be used to modify
- * the behavior of ImageModelV3 operations.
- */
-type ImageModelV3Middleware = {
-    /**
-     * Middleware specification version. Use `v3` for the current version.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Override the provider name if desired.
-     * @param options.model - The image model instance.
-     */
-    overrideProvider?: (options: {
-        model: ImageModelV3;
-    }) => string;
-    /**
-     * Override the model ID if desired.
-     * @param options.model - The image model instance.
-     */
-    overrideModelId?: (options: {
-        model: ImageModelV3;
-    }) => string;
-    /**
-     * Override the limit of how many images can be generated in a single API call if desired.
-     * @param options.model - The image model instance.
-     */
-    overrideMaxImagesPerCall?: (options: {
-        model: ImageModelV3;
-    }) => ImageModelV3['maxImagesPerCall'];
-    /**
-     * Transforms the parameters before they are passed to the image model.
-     * @param options - Object containing the parameters.
-     * @param options.params - The original parameters for the image model call.
-     * @returns A promise that resolves to the transformed parameters.
-     */
-    transformParams?: (options: {
-        params: ImageModelV3CallOptions;
-        model: ImageModelV3;
-    }) => PromiseLike<ImageModelV3CallOptions>;
-    /**
-     * Wraps the generate operation of the image model.
-     *
-     * @param options - Object containing the generate function, parameters, and model.
-     * @param options.doGenerate - The original generate function.
-     * @param options.params - The parameters for the generate call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The image model instance.
-     * @returns A promise that resolves to the result of the generate operation.
-     */
-    wrapGenerate?: (options: {
-        doGenerate: () => ReturnType<ImageModelV3['doGenerate']>;
-        params: ImageModelV3CallOptions;
-        model: ImageModelV3;
-    }) => Promise<Awaited<ReturnType<ImageModelV3['doGenerate']>>>;
-};
-
-/**
- * A tool has a name, a description, and a set of parameters.
+ * Additional provider-specific options.
  *
- * Note: this is **not** the user-facing tool definition. The AI SDK methods will
- * map the user-facing tool definitions to this format.
+ * They are passed through to the provider from the AI SDK and enable
+ * provider-specific functionality that can be fully encapsulated in the provider.
  */
-type LanguageModelV3FunctionTool = {
-    /**
-     * The type of the tool (always 'function').
-     */
-    type: 'function';
-    /**
-     * The name of the tool. Unique within this model call.
-     */
-    name: string;
-    /**
-     * A description of the tool. The language model uses this to understand the
-     * tool's purpose and to provide better completion suggestions.
-     */
-    description?: string;
-    /**
-     * The parameters that the tool expects. The language model uses this to
-     * understand the tool's input requirements and to provide matching suggestions.
-     */
-    inputSchema: JSONSchema7;
-    /**
-     * An optional list of input examples that show the language
-     * model what the input should look like.
-     */
-    inputExamples?: Array<{
-        input: JSONObject;
-    }>;
-    /**
-     * Strict mode setting for the tool.
-     *
-     * Providers that support strict mode will use this setting to determine
-     * how the input should be generated. Strict mode will always produce
-     * valid inputs, but it might limit what input schemas are supported.
-     */
-    strict?: boolean;
-    /**
-     * The provider-specific options for the tool.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-};
+type ProviderOptions = SharedV3ProviderOptions;
 
-/**
- * Data content. Can be a Uint8Array, base64 encoded data as a string or a URL.
- */
-type LanguageModelV3DataContent = Uint8Array | string | URL;
-
-/**
- * A prompt is a list of messages.
- *
- * Note: Not all models and prompt formats support multi-modal inputs and
- * tool calls. The validation happens at runtime.
- *
- * Note: This is not a user-facing prompt. The AI SDK methods will map the
- * user-facing prompt types such as chat or instruction prompts to this format.
- */
-type LanguageModelV3Prompt = Array<LanguageModelV3Message>;
-type LanguageModelV3Message = ({
-    role: 'system';
-    content: string;
-} | {
-    role: 'user';
-    content: Array<LanguageModelV3TextPart | LanguageModelV3FilePart>;
-} | {
-    role: 'assistant';
-    content: Array<LanguageModelV3TextPart | LanguageModelV3FilePart | LanguageModelV3ReasoningPart | LanguageModelV3ToolCallPart | LanguageModelV3ToolResultPart>;
-} | {
-    role: 'tool';
-    content: Array<LanguageModelV3ToolResultPart | LanguageModelV3ToolApprovalResponsePart>;
-}) & {
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-};
 /**
  * Text content part of a prompt. It contains a string of text.
  */
-interface LanguageModelV3TextPart {
+interface TextPart {
     type: 'text';
     /**
      * The text content.
      */
     text: string;
     /**
-     * Additional provider-specific options. They are passed through
+     * Additional provider-specific metadata. They are passed through
      * to the provider from the AI SDK and enable provider-specific
      * functionality that can be fully encapsulated in the provider.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 }
 /**
- * Reasoning content part of a prompt. It contains a string of reasoning text.
+ * Image content part of a prompt. It contains an image.
  */
-interface LanguageModelV3ReasoningPart {
+interface ImagePart {
+    type: 'image';
+    /**
+     * Image data. Can either be:
+     *
+     * - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
+     * - URL: a URL that points to the image
+     */
+    image: DataContent | URL;
+    /**
+     * Optional IANA media type of the image.
+     *
+     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
+     */
+    mediaType?: string;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+}
+/**
+ * File content part of a prompt. It contains a file.
+ */
+interface FilePart {
+    type: 'file';
+    /**
+     * File data. Can either be:
+     *
+     * - data: a base64-encoded string, a Uint8Array, an ArrayBuffer, or a Buffer
+     * - URL: a URL that points to the image
+     */
+    data: DataContent | URL;
+    /**
+     * Optional filename of the file.
+     */
+    filename?: string;
+    /**
+     * IANA media type of the file.
+     *
+     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
+     */
+    mediaType: string;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+}
+/**
+ * Reasoning content part of a prompt. It contains a reasoning.
+ */
+interface ReasoningPart {
     type: 'reasoning';
     /**
      * The reasoning text.
      */
     text: string;
     /**
-     * Additional provider-specific options. They are passed through
+     * Additional provider-specific metadata. They are passed through
      * to the provider from the AI SDK and enable provider-specific
      * functionality that can be fully encapsulated in the provider.
      */
-    providerOptions?: SharedV3ProviderOptions;
-}
-/**
- * File content part of a prompt. It contains a file.
- */
-interface LanguageModelV3FilePart {
-    type: 'file';
-    /**
-     * Optional filename of the file.
-     */
-    filename?: string;
-    /**
-     * File data. Can be a Uint8Array, base64 encoded data as a string or a URL.
-     */
-    data: LanguageModelV3DataContent;
-    /**
-     * IANA media type of the file.
-     *
-     * Can support wildcards, e.g. `image/*` (in which case the provider needs to take appropriate action).
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 }
 /**
  * Tool call content part of a prompt. It contains a tool call (usually generated by the AI model).
  */
-interface LanguageModelV3ToolCallPart {
+interface ToolCallPart {
     type: 'tool-call';
     /**
      * ID of the tool call. This ID is used to match the tool call with the tool result.
@@ -1180,21 +655,20 @@ interface LanguageModelV3ToolCallPart {
      */
     input: unknown;
     /**
-     * Whether the tool call will be executed by the provider.
-     * If this flag is not set or is false, the tool call will be executed by the client.
-     */
-    providerExecuted?: boolean;
-    /**
-     * Additional provider-specific options. They are passed through
+     * Additional provider-specific metadata. They are passed through
      * to the provider from the AI SDK and enable provider-specific
      * functionality that can be fully encapsulated in the provider.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
+    /**
+     * Whether the tool call was executed by the provider.
+     */
+    providerExecuted?: boolean;
 }
 /**
  * Tool result content part of a prompt. It contains the result of the tool call with the matching ID.
  */
-interface LanguageModelV3ToolResultPart {
+interface ToolResultPart {
     type: 'tool-result';
     /**
      * ID of the tool call that this result is associated with.
@@ -1205,45 +679,20 @@ interface LanguageModelV3ToolResultPart {
      */
     toolName: string;
     /**
-     * Result of the tool call.
+     * Result of the tool call. This is a JSON-serializable object.
      */
-    output: LanguageModelV3ToolResultOutput;
+    output: ToolResultOutput;
     /**
-     * Additional provider-specific options. They are passed through
+     * Additional provider-specific metadata. They are passed through
      * to the provider from the AI SDK and enable provider-specific
      * functionality that can be fully encapsulated in the provider.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 }
 /**
- * Tool approval response content part of a prompt. It contains the user's
- * decision to approve or deny a provider-executed tool call.
+ * Output of a tool result.
  */
-interface LanguageModelV3ToolApprovalResponsePart {
-    type: 'tool-approval-response';
-    /**
-     * ID of the approval request that this response refers to.
-     */
-    approvalId: string;
-    /**
-     * Whether the approval was granted (true) or denied (false).
-     */
-    approved: boolean;
-    /**
-     * Optional reason for approval or denial.
-     */
-    reason?: string;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-}
-/**
- * Result of a tool call.
- */
-type LanguageModelV3ToolResultOutput = {
+type ToolResultOutput = {
     /**
      * Text tool output that should be directly sent to the API.
      */
@@ -1252,14 +701,14 @@ type LanguageModelV3ToolResultOutput = {
     /**
      * Provider-specific options.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 } | {
     type: 'json';
     value: JSONValue;
     /**
      * Provider-specific options.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 } | {
     /**
      * Type when the user has denied the execution of the tool call.
@@ -1272,21 +721,21 @@ type LanguageModelV3ToolResultOutput = {
     /**
      * Provider-specific options.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 } | {
     type: 'error-text';
     value: string;
     /**
      * Provider-specific options.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 } | {
     type: 'error-json';
     value: JSONValue;
     /**
      * Provider-specific options.
      */
-    providerOptions?: SharedV3ProviderOptions;
+    providerOptions?: ProviderOptions;
 } | {
     type: 'content';
     value: Array<{
@@ -1298,7 +747,14 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
+    } | {
+        /**
+         * @deprecated Use image-data or file-data instead.
+         */
+        type: 'media';
+        data: string;
+        mediaType: string;
     } | {
         type: 'file-data';
         /**
@@ -1317,7 +773,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         type: 'file-url';
         /**
@@ -1327,7 +783,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         type: 'file-id';
         /**
@@ -1342,7 +798,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         /**
          * Images that are referenced using base64 encoded data.
@@ -1360,7 +816,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         /**
          * Images that are referenced using a URL.
@@ -1373,7 +829,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         /**
          * Images that are referenced using a provider file id.
@@ -1391,7 +847,7 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     } | {
         /**
          * Custom content part. This can be used to implement
@@ -1401,842 +857,531 @@ type LanguageModelV3ToolResultOutput = {
         /**
          * Provider-specific options.
          */
-        providerOptions?: SharedV3ProviderOptions;
+        providerOptions?: ProviderOptions;
     }>;
 };
 
 /**
- * The configuration of a provider tool.
- *
- * Provider tools are tools that are specific to a certain provider.
- * The input and output schemas are defined be the provider, and
- * some of the tools are also executed on the provider systems.
+ * Tool approval request prompt part.
  */
-type LanguageModelV3ProviderTool = {
+type ToolApprovalRequest = {
+    type: 'tool-approval-request';
     /**
-     * The type of the tool (always 'provider').
+     * ID of the tool approval.
+     */
+    approvalId: string;
+    /**
+     * ID of the tool call that the approval request is for.
+     */
+    toolCallId: string;
+};
+
+/**
+ * An assistant message. It can contain text, tool calls, or a combination of text and tool calls.
+ */
+type AssistantModelMessage = {
+    role: 'assistant';
+    content: AssistantContent;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+};
+/**
+ * Content of an assistant message.
+ * It can be a string or an array of text, image, reasoning, redacted reasoning, and tool call parts.
+ */
+type AssistantContent = string | Array<TextPart | FilePart | ReasoningPart | ToolCallPart | ToolResultPart | ToolApprovalRequest>;
+
+/**
+ * A system message. It can contain system information.
+ *
+ * Note: using the "system" part of the prompt is strongly preferred
+ * to increase the resilience against prompt injection attacks,
+ * and because not all providers support several system messages.
+ */
+type SystemModelMessage = {
+    role: 'system';
+    content: string;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+};
+
+/**
+ * Tool approval response prompt part.
+ */
+type ToolApprovalResponse = {
+    type: 'tool-approval-response';
+    /**
+     * ID of the tool approval.
+     */
+    approvalId: string;
+    /**
+     * Flag indicating whether the approval was granted or denied.
+     */
+    approved: boolean;
+    /**
+     * Optional reason for the approval or denial.
+     */
+    reason?: string;
+    /**
+     * Flag indicating whether the tool call is provider-executed.
+     * Only provider-executed tool approval responses should be sent to the model.
+     */
+    providerExecuted?: boolean;
+};
+
+/**
+ * A tool message. It contains the result of one or more tool calls.
+ */
+type ToolModelMessage = {
+    role: 'tool';
+    content: ToolContent;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+};
+/**
+ * Content of a tool message. It is an array of tool result parts.
+ */
+type ToolContent = Array<ToolResultPart | ToolApprovalResponse>;
+
+/**
+ * A user message. It can contain text or a combination of text and images.
+ */
+type UserModelMessage = {
+    role: 'user';
+    content: UserContent;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+};
+/**
+ * Content of a user message. It can be a string or an array of text and image parts.
+ */
+type UserContent = string | Array<TextPart | ImagePart | FilePart>;
+
+/**
+ * A message that can be used in the `messages` field of a prompt.
+ * It can be a user message, an assistant message, or a tool message.
+ */
+type ModelMessage = SystemModelMessage | UserModelMessage | AssistantModelMessage | ToolModelMessage;
+
+/**
+ * Additional options that are sent into each tool call.
+ */
+interface ToolExecutionOptions {
+    /**
+     * The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data.
+     */
+    toolCallId: string;
+    /**
+     * Messages that were sent to the language model to initiate the response that contained the tool call.
+     * The messages **do not** include the system prompt nor the assistant response that contained the tool call.
+     */
+    messages: ModelMessage[];
+    /**
+     * An optional abort signal that indicates that the overall operation should be aborted.
+     */
+    abortSignal?: AbortSignal;
+    /**
+     * User-defined context.
+     *
+     * Treat the context object as immutable inside tools.
+     * Mutating the context object can lead to race conditions and unexpected results
+     * when tools are called in parallel.
+     *
+     * If you need to mutate the context, analyze the tool calls and results
+     * in `prepareStep` and update it there.
+     *
+     * Experimental (can break in patch releases).
+     */
+    experimental_context?: unknown;
+}
+/**
+ * Function that is called to determine if the tool needs approval before it can be executed.
+ */
+type ToolNeedsApprovalFunction<INPUT> = (input: INPUT, options: {
+    /**
+     * The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data.
+     */
+    toolCallId: string;
+    /**
+     * Messages that were sent to the language model to initiate the response that contained the tool call.
+     * The messages **do not** include the system prompt nor the assistant response that contained the tool call.
+     */
+    messages: ModelMessage[];
+    /**
+     * Additional context.
+     *
+     * Experimental (can break in patch releases).
+     */
+    experimental_context?: unknown;
+}) => boolean | PromiseLike<boolean>;
+type ToolExecuteFunction<INPUT, OUTPUT> = (input: INPUT, options: ToolExecutionOptions) => AsyncIterable<OUTPUT> | PromiseLike<OUTPUT> | OUTPUT;
+type NeverOptional<N, T> = 0 extends 1 & N ? Partial<T> : [N] extends [never] ? Partial<Record<keyof T, undefined>> : T;
+type ToolOutputProperties<INPUT, OUTPUT> = NeverOptional<OUTPUT, {
+    /**
+     * An async function that is called with the arguments from the tool call and produces a result.
+     * If not provided, the tool will not be executed automatically.
+     *
+     * @args is the input of the tool call.
+     * @options.abortSignal is a signal that can be used to abort the tool call.
+     */
+    execute: ToolExecuteFunction<INPUT, OUTPUT>;
+    outputSchema?: FlexibleSchema<OUTPUT>;
+} | {
+    outputSchema: FlexibleSchema<OUTPUT>;
+    execute?: never;
+}>;
+/**
+ * A tool contains the description and the schema of the input that the tool expects.
+ * This enables the language model to generate the input.
+ *
+ * The tool can also contain an optional execute function for the actual execution function of the tool.
+ */
+type Tool<INPUT extends JSONValue | unknown | never = any, OUTPUT extends JSONValue | unknown | never = any> = {
+    /**
+     * An optional description of what the tool does.
+     * Will be used by the language model to decide whether to use the tool.
+     * Not used for provider-defined tools.
+     */
+    description?: string;
+    /**
+     * An optional title of the tool.
+     */
+    title?: string;
+    /**
+     * Additional provider-specific metadata. They are passed through
+     * to the provider from the AI SDK and enable provider-specific
+     * functionality that can be fully encapsulated in the provider.
+     */
+    providerOptions?: ProviderOptions;
+    /**
+     * Optional metadata about the tool itself (e.g. its source).
+     *
+     * Unlike `providerOptions`, this metadata is not sent to the language
+     * model. Instead, it is propagated onto the resulting tool call's
+     * `providerMetadata` so consumers can read it from tool call / result
+     * parts and UI message parts. This is useful for sources of dynamic
+     * tools (e.g. an MCP server) to identify themselves.
+     */
+    providerMetadata?: SharedV3ProviderMetadata;
+    /**
+     * The schema of the input that the tool expects.
+     * The language model will use this to generate the input.
+     * It is also used to validate the output of the language model.
+     *
+     * You can use descriptions on the schema properties to make the input understandable for the language model.
+     */
+    inputSchema: FlexibleSchema<INPUT>;
+    /**
+     * An optional list of input examples that show the language
+     * model what the input should look like.
+     */
+    inputExamples?: Array<{
+        input: NoInfer<INPUT>;
+    }>;
+    /**
+     * Whether the tool needs approval before it can be executed.
+     */
+    needsApproval?: boolean | ToolNeedsApprovalFunction<[INPUT] extends [never] ? unknown : INPUT>;
+    /**
+     * Strict mode setting for the tool.
+     *
+     * Providers that support strict mode will use this setting to determine
+     * how the input should be generated. Strict mode will always produce
+     * valid inputs, but it might limit what input schemas are supported.
+     */
+    strict?: boolean;
+    /**
+     * Optional function that is called when the argument streaming starts.
+     * Only called when the tool is used in a streaming context.
+     */
+    onInputStart?: (options: ToolExecutionOptions) => void | PromiseLike<void>;
+    /**
+     * Optional function that is called when an argument streaming delta is available.
+     * Only called when the tool is used in a streaming context.
+     */
+    onInputDelta?: (options: {
+        inputTextDelta: string;
+    } & ToolExecutionOptions) => void | PromiseLike<void>;
+    /**
+     * Optional function that is called when a tool call can be started,
+     * even if the execute function is not provided.
+     */
+    onInputAvailable?: (options: {
+        input: [INPUT] extends [never] ? unknown : INPUT;
+    } & ToolExecutionOptions) => void | PromiseLike<void>;
+} & ToolOutputProperties<INPUT, OUTPUT> & {
+    /**
+     * Optional conversion function that maps the tool result to an output that can be used by the language model.
+     *
+     * If not provided, the tool result will be sent as a JSON object.
+     */
+    toModelOutput?: (options: {
+        /**
+         * The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data.
+         */
+        toolCallId: string;
+        /**
+         * The input of the tool call.
+         */
+        input: [INPUT] extends [never] ? unknown : INPUT;
+        /**
+         * The output of the tool call.
+         */
+        output: 0 extends 1 & OUTPUT ? any : [OUTPUT] extends [never] ? any : NoInfer<OUTPUT>;
+    }) => ToolResultOutput | PromiseLike<ToolResultOutput>;
+} & ({
+    /**
+     * Tool with user-defined input and output schemas.
+     */
+    type?: undefined | 'function';
+} | {
+    /**
+     * Tool that is defined at runtime (e.g. an MCP tool).
+     * The types of input and output are not known at development time.
+     */
+    type: 'dynamic';
+} | {
+    /**
+     * Tool with provider-defined input and output schemas.
      */
     type: 'provider';
     /**
-     * The ID of the tool. Should follow the format `<provider-id>.<unique-tool-name>`.
+     * The ID of the tool. Must follow the format `<provider-name>.<unique-tool-name>`.
      */
     id: `${string}.${string}`;
-    /**
-     * The name of the tool. Unique within this model call.
-     */
-    name: string;
     /**
      * The arguments for configuring the tool. Must match the expected arguments defined by the provider for this tool.
      */
     args: Record<string, unknown>;
-};
-
-type LanguageModelV3ToolChoice = {
-    type: 'auto';
-} | {
-    type: 'none';
-} | {
-    type: 'required';
-} | {
-    type: 'tool';
-    toolName: string;
-};
-
-type LanguageModelV3CallOptions = {
     /**
-     * A language mode prompt is a standardized prompt type.
+     * Whether this provider-executed tool supports deferred results.
      *
-     * Note: This is **not** the user-facing prompt. The AI SDK methods will map the
-     * user-facing prompt types such as chat or instruction prompts to this format.
-     * That approach allows us to evolve the user  facing prompts without breaking
-     * the language model interface.
-     */
-    prompt: LanguageModelV3Prompt;
-    /**
-     * Maximum number of tokens to generate.
-     */
-    maxOutputTokens?: number;
-    /**
-     * Temperature setting. The range depends on the provider and model.
-     */
-    temperature?: number;
-    /**
-     * Stop sequences.
-     * If set, the model will stop generating text when one of the stop sequences is generated.
-     * Providers may have limits on the number of stop sequences.
-     */
-    stopSequences?: string[];
-    /**
-     * Nucleus sampling.
-     */
-    topP?: number;
-    /**
-     * Only sample from the top K options for each subsequent token.
+     * When true, the tool result may not be returned in the same turn as the
+     * tool call (e.g., when using programmatic tool calling where a server tool
+     * triggers a client-executed tool, and the server tool's result is deferred
+     * until the client tool is resolved).
      *
-     * Used to remove "long tail" low probability responses.
-     * Recommended for advanced use cases only. You usually only need to use temperature.
-     */
-    topK?: number;
-    /**
-     * Presence penalty setting. It affects the likelihood of the model to
-     * repeat information that is already in the prompt.
-     */
-    presencePenalty?: number;
-    /**
-     * Frequency penalty setting. It affects the likelihood of the model
-     * to repeatedly use the same words or phrases.
-     */
-    frequencyPenalty?: number;
-    /**
-     * Response format. The output can either be text or JSON. Default is text.
+     * This flag allows the AI SDK to handle tool results that arrive without
+     * a matching tool call in the current response.
      *
-     * If JSON is selected, a schema can optionally be provided to guide the LLM.
+     * @default false
      */
-    responseFormat?: {
-        type: 'text';
-    } | {
-        type: 'json';
-        /**
-         * JSON schema that the generated output should conform to.
-         */
-        schema?: JSONSchema7;
-        /**
-         * Name of output that should be generated. Used by some providers for additional LLM guidance.
-         */
-        name?: string;
-        /**
-         * Description of the output that should be generated. Used by some providers for additional LLM guidance.
-         */
-        description?: string;
-    };
-    /**
-     * The seed (integer) to use for random sampling. If set and supported
-     * by the model, calls will generate deterministic results.
-     */
-    seed?: number;
-    /**
-     * The tools that are available for the model.
-     */
-    tools?: Array<LanguageModelV3FunctionTool | LanguageModelV3ProviderTool>;
-    /**
-     * Specifies how the tool should be selected. Defaults to 'auto'.
-     */
-    toolChoice?: LanguageModelV3ToolChoice;
-    /**
-     * Include raw chunks in the stream. Only applicable for streaming calls.
-     */
-    includeRawChunks?: boolean;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-};
-
+    supportsDeferredResults?: boolean;
+});
 /**
- * A file that has been generated by the model.
- * Generated files as base64 encoded strings or binary data.
- * The files should be returned without any unnecessary conversion.
+ * Infer the input type of a tool.
  */
-type LanguageModelV3File = {
-    type: 'file';
-    /**
-     * The IANA media type of the file, e.g. `image/png` or `audio/mp3`.
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Generated file data as base64 encoded strings or binary data.
-     *
-     * The file data should be returned without any unnecessary conversion.
-     * If the API returns base64 encoded strings, the file data should be returned
-     * as base64 encoded strings. If the API returns binary data, the file data should
-     * be returned as binary data.
-     */
-    data: string | Uint8Array;
-    /**
-     * Optional provider-specific metadata for the file part.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-};
-
+type InferToolInput<TOOL extends Tool> = TOOL extends Tool<infer INPUT, any> ? INPUT : never;
 /**
- * Reasoning that the model has generated.
+ * Infer the output type of a tool.
  */
-type LanguageModelV3Reasoning = {
-    type: 'reasoning';
-    text: string;
-    /**
-     * Optional provider-specific metadata for the reasoning part.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-};
-
+type InferToolOutput<TOOL extends Tool> = TOOL extends Tool<any, infer OUTPUT> ? OUTPUT : never;
 /**
- * A source that has been used as input to generate the response.
+ * Helper function for inferring the execute args of a tool.
  */
-type LanguageModelV3Source = {
-    type: 'source';
-    /**
-     * The type of source - URL sources reference web content.
-     */
-    sourceType: 'url';
-    /**
-     * The ID of the source.
-     */
-    id: string;
-    /**
-     * The URL of the source.
-     */
-    url: string;
-    /**
-     * The title of the source.
-     */
+declare function tool<INPUT, OUTPUT>(tool: Tool<INPUT, OUTPUT>): Tool<INPUT, OUTPUT>;
+declare function tool<INPUT>(tool: Tool<INPUT, never>): Tool<INPUT, never>;
+declare function tool<OUTPUT>(tool: Tool<never, OUTPUT>): Tool<never, OUTPUT>;
+declare function tool(tool: Tool<never, never>): Tool<never, never>;
+/**
+ * Defines a dynamic tool.
+ */
+declare function dynamicTool(tool: {
+    description?: string;
     title?: string;
-    /**
-     * Additional provider metadata for the source.
-     */
+    providerOptions?: ProviderOptions;
     providerMetadata?: SharedV3ProviderMetadata;
-} | {
-    type: 'source';
+    inputSchema: FlexibleSchema<unknown>;
+    execute: ToolExecuteFunction<unknown, unknown>;
     /**
-     * The type of source - document sources reference files/documents.
+     * Optional conversion function that maps the tool result to an output that can be used by the language model.
+     *
+     * If not provided, the tool result will be sent as a JSON object.
      */
-    sourceType: 'document';
+    toModelOutput?: (options: {
+        /**
+         * The ID of the tool call. You can use it e.g. when sending tool-call related information with stream data.
+         */
+        toolCallId: string;
+        /**
+         * The input of the tool call.
+         */
+        input: unknown;
+        /**
+         * The output of the tool call.
+         */
+        output: unknown;
+    }) => ToolResultOutput | PromiseLike<ToolResultOutput>;
     /**
-     * The ID of the source.
+     * Whether the tool needs approval before it can be executed.
      */
-    id: string;
-    /**
-     * IANA media type of the document (e.g., 'application/pdf').
-     */
-    mediaType: string;
-    /**
-     * The title of the document.
-     */
-    title: string;
-    /**
-     * Optional filename of the document.
-     */
-    filename?: string;
-    /**
-     * Additional provider metadata for the source.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
+    needsApproval?: boolean | ToolNeedsApprovalFunction<unknown>;
+}): Tool<unknown, unknown> & {
+    type: 'dynamic';
 };
 
+type ProviderToolFactory<INPUT, ARGS extends object> = <OUTPUT>(options: ARGS & {
+    execute?: ToolExecuteFunction<INPUT, OUTPUT>;
+    needsApproval?: Tool<INPUT, OUTPUT>['needsApproval'];
+    toModelOutput?: Tool<INPUT, OUTPUT>['toModelOutput'];
+    onInputStart?: Tool<INPUT, OUTPUT>['onInputStart'];
+    onInputDelta?: Tool<INPUT, OUTPUT>['onInputDelta'];
+    onInputAvailable?: Tool<INPUT, OUTPUT>['onInputAvailable'];
+}) => Tool<INPUT, OUTPUT>;
+declare function createProviderToolFactory<INPUT, ARGS extends object>({ id, inputSchema, }: {
+    id: `${string}.${string}`;
+    inputSchema: FlexibleSchema<INPUT>;
+}): ProviderToolFactory<INPUT, ARGS>;
+type ProviderToolFactoryWithOutputSchema<INPUT, OUTPUT, ARGS extends object> = (options: ARGS & {
+    execute?: ToolExecuteFunction<INPUT, OUTPUT>;
+    needsApproval?: Tool<INPUT, OUTPUT>['needsApproval'];
+    toModelOutput?: Tool<INPUT, OUTPUT>['toModelOutput'];
+    onInputStart?: Tool<INPUT, OUTPUT>['onInputStart'];
+    onInputDelta?: Tool<INPUT, OUTPUT>['onInputDelta'];
+    onInputAvailable?: Tool<INPUT, OUTPUT>['onInputAvailable'];
+}) => Tool<INPUT, OUTPUT>;
+declare function createProviderToolFactoryWithOutputSchema<INPUT, OUTPUT, ARGS extends object>({ id, inputSchema, outputSchema, supportsDeferredResults, }: {
+    id: `${string}.${string}`;
+    inputSchema: FlexibleSchema<INPUT>;
+    outputSchema: FlexibleSchema<OUTPUT>;
+    /**
+     * Whether this provider-executed tool supports deferred results.
+     *
+     * When true, the tool result may not be returned in the same turn as the
+     * tool call (e.g., when using programmatic tool calling where a server tool
+     * triggers a client-executed tool, and the server tool's result is deferred
+     * until the client tool is resolved).
+     *
+     * @default false
+     */
+    supportsDeferredResults?: boolean;
+}): ProviderToolFactoryWithOutputSchema<INPUT, OUTPUT, ARGS>;
+
 /**
- * Text that the model has generated.
+ * Removes entries from a record where the value is null or undefined.
+ * @param record - The input object whose entries may be null or undefined.
+ * @returns A new object containing only entries with non-null and non-undefined values.
  */
-type LanguageModelV3Text = {
-    type: 'text';
-    /**
-     * The text content.
-     */
-    text: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-};
+declare function removeUndefinedEntries<T>(record: Record<string, T | undefined>): Record<string, T>;
+
+type Resolvable<T> = MaybePromiseLike<T> | (() => MaybePromiseLike<T>);
+/**
+ * Resolves a value that could be a raw value, a Promise, a function returning a value,
+ * or a function returning a Promise.
+ */
+declare function resolve<T>(value: Resolvable<T>): Promise<T>;
 
 /**
- * Tool approval request emitted by a provider for a provider-executed tool call.
+ * Strips file extension segments from a filename.
  *
- * This is used for flows where the provider executes the tool (e.g. MCP tools)
- * but requires an explicit user approval before continuing.
+ * Examples:
+ * - "report.pdf" -> "report"
+ * - "archive.tar.gz" -> "archive"
+ * - "filename" -> "filename"
  */
-type LanguageModelV3ToolApprovalRequest = {
-    type: 'tool-approval-request';
-    /**
-     * ID of the approval request. This ID is referenced by the subsequent
-     * tool-approval-response (tool message) to approve or deny execution.
-     */
-    approvalId: string;
-    /**
-     * The tool call ID that this approval request is for.
-     */
-    toolCallId: string;
-    /**
-     * Additional provider-specific metadata for the approval request.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-};
+declare function stripFileExtension(filename: string): string;
+
+declare function convertBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer>;
+declare function convertUint8ArrayToBase64(array: Uint8Array): string;
+declare function convertToBase64(value: string | Uint8Array): string;
 
 /**
- * Tool calls that the model has generated.
- */
-type LanguageModelV3ToolCall = {
-    type: 'tool-call';
-    /**
-     * The identifier of the tool call. It must be unique across all tool calls.
-     */
-    toolCallId: string;
-    /**
-     * The name of the tool that should be called.
-     */
-    toolName: string;
-    /**
-     * Stringified JSON object with the tool call arguments. Must match the
-     * parameters schema of the tool.
-     */
-    input: string;
-    /**
-     * Whether the tool call will be executed by the provider.
-     * If this flag is not set or is false, the tool call will be executed by the client.
-     */
-    providerExecuted?: boolean;
-    /**
-     * Whether the tool is dynamic, i.e. defined at runtime.
-     * For example, MCP (Model Context Protocol) tools that are executed by the provider.
-     */
-    dynamic?: boolean;
-    /**
-     * Additional provider-specific metadata for the tool call.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-};
-
-/**
- * Result of a tool call that has been executed by the provider.
- */
-type LanguageModelV3ToolResult = {
-    type: 'tool-result';
-    /**
-     * The ID of the tool call that this result is associated with.
-     */
-    toolCallId: string;
-    /**
-     * Name of the tool that generated this result.
-     */
-    toolName: string;
-    /**
-     * Result of the tool call. This is a JSON-serializable object.
-     */
-    result: NonNullable<JSONValue>;
-    /**
-     * Optional flag if the result is an error or an error message.
-     */
-    isError?: boolean;
-    /**
-     * Whether the tool result is preliminary.
-     *
-     * Preliminary tool results replace each other, e.g. image previews.
-     * There always has to be a final, non-preliminary tool result.
-     *
-     * If this flag is set to true, the tool result is preliminary.
-     * If this flag is not set or is false, the tool result is not preliminary.
-     */
-    preliminary?: boolean;
-    /**
-     * Whether the tool is dynamic, i.e. defined at runtime.
-     * For example, MCP (Model Context Protocol) tools that are executed by the provider.
-     */
-    dynamic?: boolean;
-    /**
-     * Additional provider-specific metadata for the tool result.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-};
-
-type LanguageModelV3Content = LanguageModelV3Text | LanguageModelV3Reasoning | LanguageModelV3File | LanguageModelV3ToolApprovalRequest | LanguageModelV3Source | LanguageModelV3ToolCall | LanguageModelV3ToolResult;
-
-/**
- * Reason why a language model finished generating a response.
+ * Validates that a URL is safe to download from, blocking private/internal addresses
+ * to prevent SSRF attacks.
  *
- * Contains both a unified finish reason and a raw finish reason from the provider.
- * The unified finish reason is used to provide a consistent finish reason across different providers.
- * The raw finish reason is used to provide the original finish reason from the provider.
+ * @param url - The URL string to validate.
+ * @throws DownloadError if the URL is unsafe.
  */
-type LanguageModelV3FinishReason = {
-    /**
-     * Unified finish reason. This enables using the same finish reason across different providers.
-     *
-     * Can be one of the following:
-     * - `stop`: model generated stop sequence
-     * - `length`: model generated maximum number of tokens
-     * - `content-filter`: content filter violation stopped the model
-     * - `tool-calls`: model triggered tool calls
-     * - `error`: model stopped because of an error
-     * - `other`: model stopped for other reasons
-     */
-    unified: 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other';
-    /**
-     * Raw finish reason from the provider.
-     * This is the original finish reason from the provider.
-     */
-    raw: string | undefined;
-};
-
-interface LanguageModelV3ResponseMetadata {
-    /**
-     * ID for the generated response, if the provider sends one.
-     */
-    id?: string;
-    /**
-     * Timestamp for the start of the generated response, if the provider sends one.
-     */
-    timestamp?: Date;
-    /**
-     * The ID of the response model that was used to generate the response, if the provider sends one.
-     */
-    modelId?: string;
-}
+declare function validateDownloadUrl(url: string): void;
 
 /**
- * Usage information for a language model call.
+ * Validates the types of an unknown object using a schema and
+ * return a strongly-typed object.
+ *
+ * @template T - The type of the object to validate.
+ * @param {string} options.value - The object to validate.
+ * @param {Validator<T>} options.schema - The schema to use for validating the JSON.
+ * @param {TypeValidationContext} options.context - Optional context about what is being validated.
+ * @returns {Promise<T>} - The typed object.
  */
-type LanguageModelV3Usage = {
-    /**
-     * Information about the input tokens.
-     */
-    inputTokens: {
-        /**
-         * The total number of input (prompt) tokens used.
-         */
-        total: number | undefined;
-        /**
-         * The number of non-cached input (prompt) tokens used.
-         */
-        noCache: number | undefined;
-        /**
-         * The number of cached input (prompt) tokens read.
-         */
-        cacheRead: number | undefined;
-        /**
-         * The number of cached input (prompt) tokens written.
-         */
-        cacheWrite: number | undefined;
-    };
-    /**
-     * Information about the output tokens.
-     */
-    outputTokens: {
-        /**
-         * The total number of output (completion) tokens used.
-         */
-        total: number | undefined;
-        /**
-         * The number of text tokens used.
-         */
-        text: number | undefined;
-        /**
-         * The number of reasoning tokens used.
-         */
-        reasoning: number | undefined;
-    };
-    /**
-     * Raw usage information from the provider.
-     *
-     * This is the usage information in the shape that the provider returns.
-     * It can include additional information that is not part of the standard usage information.
-     */
-    raw?: JSONObject;
-};
-
+declare function validateTypes<OBJECT>({ value, schema, context, }: {
+    value: unknown;
+    schema: FlexibleSchema<OBJECT>;
+    context?: TypeValidationContext;
+}): Promise<OBJECT>;
 /**
- * The result of a language model doGenerate call.
+ * Safely validates the types of an unknown object using a schema and
+ * return a strongly-typed object.
+ *
+ * @template T - The type of the object to validate.
+ * @param {string} options.value - The JSON object to validate.
+ * @param {Validator<T>} options.schema - The schema to use for validating the JSON.
+ * @param {TypeValidationContext} options.context - Optional context about what is being validated.
+ * @returns An object with either a `success` flag and the parsed and typed data, or a `success` flag and an error object.
  */
-type LanguageModelV3GenerateResult = {
-    /**
-     * Ordered content that the model has generated.
-     */
-    content: Array<LanguageModelV3Content>;
-    /**
-     * The finish reason.
-     */
-    finishReason: LanguageModelV3FinishReason;
-    /**
-     * The usage information.
-     */
-    usage: LanguageModelV3Usage;
-    /**
-     * Additional provider-specific metadata. They are passed through
-     * from the provider to the AI SDK and enable provider-specific
-     * results that can be fully encapsulated in the provider.
-     */
-    providerMetadata?: SharedV3ProviderMetadata;
-    /**
-     * Optional request information for telemetry and debugging purposes.
-     */
-    request?: {
-        /**
-         * Request HTTP body that was sent to the provider API.
-         */
-        body?: unknown;
-    };
-    /**
-     * Optional response information for telemetry and debugging purposes.
-     */
-    response?: LanguageModelV3ResponseMetadata & {
-        /**
-         * Response headers.
-         */
-        headers?: SharedV3Headers;
-        /**
-         * Response HTTP body.
-         */
-        body?: unknown;
-    };
-    /**
-     * Warnings for the call, e.g. unsupported settings.
-     */
-    warnings: Array<SharedV3Warning>;
-};
-
-type LanguageModelV3StreamPart = {
-    type: 'text-start';
-    providerMetadata?: SharedV3ProviderMetadata;
-    id: string;
-} | {
-    type: 'text-delta';
-    id: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-    delta: string;
-} | {
-    type: 'text-end';
-    providerMetadata?: SharedV3ProviderMetadata;
-    id: string;
-} | {
-    type: 'reasoning-start';
-    providerMetadata?: SharedV3ProviderMetadata;
-    id: string;
-} | {
-    type: 'reasoning-delta';
-    id: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-    delta: string;
-} | {
-    type: 'reasoning-end';
-    id: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-} | {
-    type: 'tool-input-start';
-    id: string;
-    toolName: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-    providerExecuted?: boolean;
-    dynamic?: boolean;
-    title?: string;
-} | {
-    type: 'tool-input-delta';
-    id: string;
-    delta: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-} | {
-    type: 'tool-input-end';
-    id: string;
-    providerMetadata?: SharedV3ProviderMetadata;
-} | LanguageModelV3ToolApprovalRequest | LanguageModelV3ToolCall | LanguageModelV3ToolResult | LanguageModelV3File | LanguageModelV3Source | {
-    type: 'stream-start';
-    warnings: Array<SharedV3Warning>;
-} | ({
-    type: 'response-metadata';
-} & LanguageModelV3ResponseMetadata) | {
-    type: 'finish';
-    usage: LanguageModelV3Usage;
-    finishReason: LanguageModelV3FinishReason;
-    providerMetadata?: SharedV3ProviderMetadata;
-} | {
-    type: 'raw';
+declare function safeValidateTypes<OBJECT>({ value, schema, context, }: {
+    value: unknown;
+    schema: FlexibleSchema<OBJECT>;
+    context?: TypeValidationContext;
+}): Promise<{
+    success: true;
+    value: OBJECT;
     rawValue: unknown;
 } | {
-    type: 'error';
-    error: unknown;
-};
+    success: false;
+    error: TypeValidationError;
+    rawValue: unknown;
+}>;
+
+declare const VERSION: string;
 
 /**
- * The result of a language model doStream call.
- */
-type LanguageModelV3StreamResult = {
-    /**
-     * The stream.
-     */
-    stream: ReadableStream<LanguageModelV3StreamPart>;
-    /**
-     * Optional request information for telemetry and debugging purposes.
-     */
-    request?: {
-        /**
-         * Request HTTP body that was sent to the provider API.
-         */
-        body?: unknown;
-    };
-    /**
-     * Optional response data.
-     */
-    response?: {
-        /**
-         * Response headers.
-         */
-        headers?: SharedV3Headers;
-    };
-};
-
-/**
- * Specification for a language model that implements the language model interface version 3.
- */
-type LanguageModelV3 = {
-    /**
-     * The language model must specify which language model interface version it implements.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Provider ID.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID.
-     */
-    readonly modelId: string;
-    /**
-     * Supported URL patterns by media type for the provider.
-     *
-     * The keys are media type patterns or full media types (e.g. `*\/*` for everything, `audio/*`, `video/*`, or `application/pdf`).
-     * and the values are arrays of regular expressions that match the URL paths.
-     *
-     * The matching should be against lower-case URLs.
-     *
-     * Matched URLs are supported natively by the model and are not downloaded.
-     *
-     * @returns A map of supported URL patterns by media type (as a promise or a plain object).
-     */
-    supportedUrls: PromiseLike<Record<string, RegExp[]>> | Record<string, RegExp[]>;
-    /**
-     * Generates a language model output (non-streaming).
-  
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     */
-    doGenerate(options: LanguageModelV3CallOptions): PromiseLike<LanguageModelV3GenerateResult>;
-    /**
-     * Generates a language model output (streaming).
-     *
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     *
-     * @return A stream of higher-level language model output parts.
-     */
-    doStream(options: LanguageModelV3CallOptions): PromiseLike<LanguageModelV3StreamResult>;
-};
-
-/**
- * Experimental middleware for LanguageModelV3.
- * This type defines the structure for middleware that can be used to modify
- * the behavior of LanguageModelV3 operations.
- */
-type LanguageModelV3Middleware = {
-    /**
-     * Middleware specification version. Use `v3` for the current version.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Override the provider name if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideProvider?: (options: {
-        model: LanguageModelV3;
-    }) => string;
-    /**
-     * Override the model ID if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideModelId?: (options: {
-        model: LanguageModelV3;
-    }) => string;
-    /**
-     * Override the supported URLs if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideSupportedUrls?: (options: {
-        model: LanguageModelV3;
-    }) => PromiseLike<Record<string, RegExp[]>> | Record<string, RegExp[]>;
-    /**
-     * Transforms the parameters before they are passed to the language model.
-     * @param options - Object containing the type of operation and the parameters.
-     * @param options.type - The type of operation ('generate' or 'stream').
-     * @param options.params - The original parameters for the language model call.
-     * @returns A promise that resolves to the transformed parameters.
-     */
-    transformParams?: (options: {
-        type: 'generate' | 'stream';
-        params: LanguageModelV3CallOptions;
-        model: LanguageModelV3;
-    }) => PromiseLike<LanguageModelV3CallOptions>;
-    /**
-     * Wraps the generate operation of the language model.
-     * @param options - Object containing the generate function, parameters, and model.
-     * @param options.doGenerate - The original generate function.
-     * @param options.doStream - The original stream function.
-     * @param options.params - The parameters for the generate call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The language model instance.
-     * @returns A promise that resolves to the result of the generate operation.
-     */
-    wrapGenerate?: (options: {
-        doGenerate: () => PromiseLike<LanguageModelV3GenerateResult>;
-        doStream: () => PromiseLike<LanguageModelV3StreamResult>;
-        params: LanguageModelV3CallOptions;
-        model: LanguageModelV3;
-    }) => PromiseLike<LanguageModelV3GenerateResult>;
-    /**
-     * Wraps the stream operation of the language model.
-     *
-     * @param options - Object containing the stream function, parameters, and model.
-     * @param options.doGenerate - The original generate function.
-     * @param options.doStream - The original stream function.
-     * @param options.params - The parameters for the stream call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The language model instance.
-     * @returns A promise that resolves to the result of the stream operation.
-     */
-    wrapStream?: (options: {
-        doGenerate: () => PromiseLike<LanguageModelV3GenerateResult>;
-        doStream: () => PromiseLike<LanguageModelV3StreamResult>;
-        params: LanguageModelV3CallOptions;
-        model: LanguageModelV3;
-    }) => PromiseLike<LanguageModelV3StreamResult>;
-};
-
-/**
- * A tool has a name, a description, and a set of parameters.
+ * Appends suffix parts to the `user-agent` header.
+ * If a `user-agent` header already exists, the suffix parts are appended to it.
+ * If no `user-agent` header exists, a new one is created with the suffix parts.
+ * Automatically removes undefined entries from the headers.
  *
- * Note: this is **not** the user-facing tool definition. The AI SDK methods will
- * map the user-facing tool definitions to this format.
+ * @param headers - The original headers.
+ * @param userAgentSuffixParts - The parts to append to the `user-agent` header.
+ * @returns The new headers with the `user-agent` header set or updated.
  */
-type LanguageModelV2FunctionTool = {
-    /**
-     * The type of the tool (always 'function').
-     */
-    type: 'function';
-    /**
-     * The name of the tool. Unique within this model call.
-     */
-    name: string;
-    /**
-     * A description of the tool. The language model uses this to understand the
-     * tool's purpose and to provide better completion suggestions.
-     */
-    description?: string;
-    /**
-     * The parameters that the tool expects. The language model uses this to
-     * understand the tool's input requirements and to provide matching suggestions.
-     */
-    inputSchema: JSONSchema7;
-    /**
-     * The provider-specific options for the tool.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-};
+declare function withUserAgentSuffix(headers: HeadersInit | Record<string, string | undefined> | undefined, ...userAgentSuffixParts: string[]): Record<string, string>;
+
+declare function withoutTrailingSlash(url: string | undefined): string | undefined;
+
+declare function executeTool<INPUT, OUTPUT>({ execute, input, options, }: {
+    execute: ToolExecuteFunction<INPUT, OUTPUT>;
+    input: INPUT;
+    options: ToolExecutionOptions;
+}): AsyncGenerator<{
+    type: 'preliminary';
+    output: OUTPUT;
+} | {
+    type: 'final';
+    output: OUTPUT;
+}>;
 
 /**
- * Data content. Can be a Uint8Array, base64 encoded data as a string or a URL.
+ * Typed tool call that is returned by generateText and streamText.
+ * It contains the tool call ID, the tool name, and the tool arguments.
  */
-type LanguageModelV2DataContent = Uint8Array | string | URL;
-
-/**
- * A prompt is a list of messages.
- *
- * Note: Not all models and prompt formats support multi-modal inputs and
- * tool calls. The validation happens at runtime.
- *
- * Note: This is not a user-facing prompt. The AI SDK methods will map the
- * user-facing prompt types such as chat or instruction prompts to this format.
- */
-type LanguageModelV2Prompt = Array<LanguageModelV2Message>;
-type LanguageModelV2Message = ({
-    role: 'system';
-    content: string;
-} | {
-    role: 'user';
-    content: Array<LanguageModelV2TextPart | LanguageModelV2FilePart>;
-} | {
-    role: 'assistant';
-    content: Array<LanguageModelV2TextPart | LanguageModelV2FilePart | LanguageModelV2ReasoningPart | LanguageModelV2ToolCallPart | LanguageModelV2ToolResultPart>;
-} | {
-    role: 'tool';
-    content: Array<LanguageModelV2ToolResultPart>;
-}) & {
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-};
-/**
- * Text content part of a prompt. It contains a string of text.
- */
-interface LanguageModelV2TextPart {
-    type: 'text';
-    /**
-     * The text content.
-     */
-    text: string;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-}
-/**
- * Reasoning content part of a prompt. It contains a string of reasoning text.
- */
-interface LanguageModelV2ReasoningPart {
-    type: 'reasoning';
-    /**
-     * The reasoning text.
-     */
-    text: string;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-}
-/**
- * File content part of a prompt. It contains a file.
- */
-interface LanguageModelV2FilePart {
-    type: 'file';
-    /**
-     * Optional filename of the file.
-     */
-    filename?: string;
-    /**
-     * File data. Can be a Uint8Array, base64 encoded data as a string or a URL.
-     */
-    data: LanguageModelV2DataContent;
-    /**
-     * IANA media type of the file.
-     *
-     * Can support wildcards, e.g. `image/*` (in which case the provider needs to take appropriate action).
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-}
-/**
- * Tool call content part of a prompt. It contains a tool call (usually generated by the AI model).
- */
-interface LanguageModelV2ToolCallPart {
-    type: 'tool-call';
+interface ToolCall<NAME extends string, INPUT> {
     /**
      * ID of the tool call. This ID is used to match the tool call with the tool result.
      */
@@ -2244,1787 +1389,56 @@ interface LanguageModelV2ToolCallPart {
     /**
      * Name of the tool that is being called.
      */
-    toolName: string;
+    toolName: NAME;
     /**
      * Arguments of the tool call. This is a JSON-serializable object that matches the tool's input schema.
      */
-    input: unknown;
+    input: INPUT;
     /**
      * Whether the tool call will be executed by the provider.
      * If this flag is not set or is false, the tool call will be executed by the client.
      */
     providerExecuted?: boolean;
     /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
+     * Whether the tool is dynamic.
      */
-    providerOptions?: SharedV2ProviderOptions;
+    dynamic?: boolean;
 }
+
 /**
- * Tool result content part of a prompt. It contains the result of the tool call with the matching ID.
+ * Typed tool result that is returned by `generateText` and `streamText`.
+ * It contains the tool call ID, the tool name, the tool arguments, and the tool result.
  */
-interface LanguageModelV2ToolResultPart {
-    type: 'tool-result';
+interface ToolResult<NAME extends string, INPUT, OUTPUT> {
     /**
-     * ID of the tool call that this result is associated with.
+     * ID of the tool call. This ID is used to match the tool call with the tool result.
      */
     toolCallId: string;
     /**
-     * Name of the tool that generated this result.
+     * Name of the tool that was called.
      */
-    toolName: string;
+    toolName: NAME;
     /**
-     * Result of the tool call.
+     * Arguments of the tool call. This is a JSON-serializable object that matches the tool's input schema.
      */
-    output: LanguageModelV2ToolResultOutput;
+    input: INPUT;
     /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
+     * Result of the tool call. This is the result of the tool's execution.
      */
-    providerOptions?: SharedV2ProviderOptions;
-}
-type LanguageModelV2ToolResultOutput = {
-    type: 'text';
-    value: string;
-} | {
-    type: 'json';
-    value: JSONValue;
-} | {
-    type: 'error-text';
-    value: string;
-} | {
-    type: 'error-json';
-    value: JSONValue;
-} | {
-    type: 'content';
-    value: Array<{
-        type: 'text';
-        /**
-         * Text content.
-         */
-        text: string;
-    } | {
-        type: 'media';
-        /**
-         * Base-64 encoded media data.
-         */
-        data: string;
-        /**
-         * IANA media type.
-         * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-         */
-        mediaType: string;
-    }>;
-};
-
-/**
- * The configuration of a tool that is defined by the provider.
- */
-type LanguageModelV2ProviderDefinedTool = {
+    output: OUTPUT;
     /**
-     * The type of the tool (always 'provider-defined').
-     */
-    type: 'provider-defined';
-    /**
-     * The ID of the tool. Should follow the format `<provider-name>.<unique-tool-name>`.
-     */
-    id: `${string}.${string}`;
-    /**
-     * The name of the tool that the user must use in the tool set.
-     */
-    name: string;
-    /**
-     * The arguments for configuring the tool. Must match the expected arguments defined by the provider for this tool.
-     */
-    args: Record<string, unknown>;
-};
-
-type LanguageModelV2ToolChoice = {
-    type: 'auto';
-} | {
-    type: 'none';
-} | {
-    type: 'required';
-} | {
-    type: 'tool';
-    toolName: string;
-};
-
-type LanguageModelV2CallOptions = {
-    /**
-     * A language mode prompt is a standardized prompt type.
-     *
-     * Note: This is **not** the user-facing prompt. The AI SDK methods will map the
-     * user-facing prompt types such as chat or instruction prompts to this format.
-     * That approach allows us to evolve the user  facing prompts without breaking
-     * the language model interface.
-     */
-    prompt: LanguageModelV2Prompt;
-    /**
-     * Maximum number of tokens to generate.
-     */
-    maxOutputTokens?: number;
-    /**
-     * Temperature setting. The range depends on the provider and model.
-     */
-    temperature?: number;
-    /**
-     * Stop sequences.
-     * If set, the model will stop generating text when one of the stop sequences is generated.
-     * Providers may have limits on the number of stop sequences.
-     */
-    stopSequences?: string[];
-    /**
-     * Nucleus sampling.
-     */
-    topP?: number;
-    /**
-     * Only sample from the top K options for each subsequent token.
-     *
-     * Used to remove "long tail" low probability responses.
-     * Recommended for advanced use cases only. You usually only need to use temperature.
-     */
-    topK?: number;
-    /**
-     * Presence penalty setting. It affects the likelihood of the model to
-     * repeat information that is already in the prompt.
-     */
-    presencePenalty?: number;
-    /**
-     * Frequency penalty setting. It affects the likelihood of the model
-     * to repeatedly use the same words or phrases.
-     */
-    frequencyPenalty?: number;
-    /**
-     * Response format. The output can either be text or JSON. Default is text.
-     *
-     * If JSON is selected, a schema can optionally be provided to guide the LLM.
-     */
-    responseFormat?: {
-        type: 'text';
-    } | {
-        type: 'json';
-        /**
-         * JSON schema that the generated output should conform to.
-         */
-        schema?: JSONSchema7;
-        /**
-         * Name of output that should be generated. Used by some providers for additional LLM guidance.
-         */
-        name?: string;
-        /**
-         * Description of the output that should be generated. Used by some providers for additional LLM guidance.
-         */
-        description?: string;
-    };
-    /**
-     * The seed (integer) to use for random sampling. If set and supported
-     * by the model, calls will generate deterministic results.
-     */
-    seed?: number;
-    /**
-     * The tools that are available for the model.
-     */
-    tools?: Array<LanguageModelV2FunctionTool | LanguageModelV2ProviderDefinedTool>;
-    /**
-     * Specifies how the tool should be selected. Defaults to 'auto'.
-     */
-    toolChoice?: LanguageModelV2ToolChoice;
-    /**
-     * Include raw chunks in the stream. Only applicable for streaming calls.
-     */
-    includeRawChunks?: boolean;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV2ProviderOptions;
-};
-
-/**
- * Warning from the model provider for this call. The call will proceed, but e.g.
- * some settings might not be supported, which can lead to suboptimal results.
- */
-type LanguageModelV2CallWarning = {
-    type: 'unsupported-setting';
-    setting: Omit<keyof LanguageModelV2CallOptions, 'prompt'>;
-    details?: string;
-} | {
-    type: 'unsupported-tool';
-    tool: LanguageModelV2FunctionTool | LanguageModelV2ProviderDefinedTool;
-    details?: string;
-} | {
-    type: 'other';
-    message: string;
-};
-
-/**
- * A file that has been generated by the model.
- * Generated files as base64 encoded strings or binary data.
- * The files should be returned without any unnecessary conversion.
- */
-type LanguageModelV2File = {
-    type: 'file';
-    /**
-     * The IANA media type of the file, e.g. `image/png` or `audio/mp3`.
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Generated file data as base64 encoded strings or binary data.
-     *
-     * The file data should be returned without any unnecessary conversion.
-     * If the API returns base64 encoded strings, the file data should be returned
-     * as base64 encoded strings. If the API returns binary data, the file data should
-     * be returned as binary data.
-     */
-    data: string | Uint8Array;
-};
-
-/**
- * Reasoning that the model has generated.
- */
-type LanguageModelV2Reasoning = {
-    type: 'reasoning';
-    text: string;
-    /**
-     * Optional provider-specific metadata for the reasoning part.
-     */
-    providerMetadata?: SharedV2ProviderMetadata;
-};
-
-/**
- * A source that has been used as input to generate the response.
- */
-type LanguageModelV2Source = {
-    type: 'source';
-    /**
-     * The type of source - URL sources reference web content.
-     */
-    sourceType: 'url';
-    /**
-     * The ID of the source.
-     */
-    id: string;
-    /**
-     * The URL of the source.
-     */
-    url: string;
-    /**
-     * The title of the source.
-     */
-    title?: string;
-    /**
-     * Additional provider metadata for the source.
-     */
-    providerMetadata?: SharedV2ProviderMetadata;
-} | {
-    type: 'source';
-    /**
-     * The type of source - document sources reference files/documents.
-     */
-    sourceType: 'document';
-    /**
-     * The ID of the source.
-     */
-    id: string;
-    /**
-     * IANA media type of the document (e.g., 'application/pdf').
-     */
-    mediaType: string;
-    /**
-     * The title of the document.
-     */
-    title: string;
-    /**
-     * Optional filename of the document.
-     */
-    filename?: string;
-    /**
-     * Additional provider metadata for the source.
-     */
-    providerMetadata?: SharedV2ProviderMetadata;
-};
-
-/**
- * Text that the model has generated.
- */
-type LanguageModelV2Text = {
-    type: 'text';
-    /**
-     * The text content.
-     */
-    text: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-};
-
-/**
- * Tool calls that the model has generated.
- */
-type LanguageModelV2ToolCall = {
-    type: 'tool-call';
-    /**
-     * The identifier of the tool call. It must be unique across all tool calls.
-     */
-    toolCallId: string;
-    /**
-     * The name of the tool that should be called.
-     */
-    toolName: string;
-    /**
-     * Stringified JSON object with the tool call arguments. Must match the
-     * parameters schema of the tool.
-     */
-    input: string;
-    /**
-     * Whether the tool call will be executed by the provider.
-     * If this flag is not set or is false, the tool call will be executed by the client.
+     * Whether the tool result has been executed by the provider.
      */
     providerExecuted?: boolean;
     /**
-     * Additional provider-specific metadata for the tool call.
+     * Whether the tool is dynamic.
      */
-    providerMetadata?: SharedV2ProviderMetadata;
-};
-
-/**
- * Result of a tool call that has been executed by the provider.
- */
-type LanguageModelV2ToolResult = {
-    type: 'tool-result';
-    /**
-     * The ID of the tool call that this result is associated with.
-     */
-    toolCallId: string;
-    /**
-     * Name of the tool that generated this result.
-     */
-    toolName: string;
-    /**
-     * Result of the tool call. This is a JSON-serializable object.
-     */
-    result: unknown;
-    /**
-     * Optional flag if the result is an error or an error message.
-     */
-    isError?: boolean;
-    /**
-     * Whether the tool result was generated by the provider.
-     * If this flag is set to true, the tool result was generated by the provider.
-     * If this flag is not set or is false, the tool result was generated by the client.
-     */
-    providerExecuted?: boolean;
-    /**
-     * Additional provider-specific metadata for the tool result.
-     */
-    providerMetadata?: SharedV2ProviderMetadata;
-};
-
-type LanguageModelV2Content = LanguageModelV2Text | LanguageModelV2Reasoning | LanguageModelV2File | LanguageModelV2Source | LanguageModelV2ToolCall | LanguageModelV2ToolResult;
-
-/**
- * Reason why a language model finished generating a response.
- *
- * Can be one of the following:
- * - `stop`: model generated stop sequence
- * - `length`: model generated maximum number of tokens
- * - `content-filter`: content filter violation stopped the model
- * - `tool-calls`: model triggered tool calls
- * - `error`: model stopped because of an error
- * - `other`: model stopped for other reasons
- * - `unknown`: the model has not transmitted a finish reason
- */
-type LanguageModelV2FinishReason = 'stop' | 'length' | 'content-filter' | 'tool-calls' | 'error' | 'other' | 'unknown';
-
-interface LanguageModelV2ResponseMetadata {
-    /**
-     * ID for the generated response, if the provider sends one.
-     */
-    id?: string;
-    /**
-     * Timestamp for the start of the generated response, if the provider sends one.
-     */
-    timestamp?: Date;
-    /**
-     * The ID of the response model that was used to generate the response, if the provider sends one.
-     */
-    modelId?: string;
+    dynamic?: boolean;
 }
 
 /**
- * Usage information for a language model call.
- *
- * If your API return additional usage information, you can add it to the
- * provider metadata under your provider's key.
+ * @deprecated Use ToolExecutionOptions instead.
  */
-type LanguageModelV2Usage = {
-    /**
-     * The number of input (prompt) tokens used.
-     */
-    inputTokens: number | undefined;
-    /**
-     * The number of output (completion) tokens used.
-     */
-    outputTokens: number | undefined;
-    /**
-     * The total number of tokens as reported by the provider.
-     * This number might be different from the sum of `inputTokens` and `outputTokens`
-     * and e.g. include reasoning tokens or other overhead.
-     */
-    totalTokens: number | undefined;
-    /**
-     * The number of reasoning tokens used.
-     */
-    reasoningTokens?: number | undefined;
-    /**
-     * The number of cached input tokens.
-     */
-    cachedInputTokens?: number | undefined;
-};
+type ToolCallOptions = ToolExecutionOptions;
 
-type LanguageModelV2StreamPart = {
-    type: 'text-start';
-    providerMetadata?: SharedV2ProviderMetadata;
-    id: string;
-} | {
-    type: 'text-delta';
-    id: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-    delta: string;
-} | {
-    type: 'text-end';
-    providerMetadata?: SharedV2ProviderMetadata;
-    id: string;
-} | {
-    type: 'reasoning-start';
-    providerMetadata?: SharedV2ProviderMetadata;
-    id: string;
-} | {
-    type: 'reasoning-delta';
-    id: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-    delta: string;
-} | {
-    type: 'reasoning-end';
-    id: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-} | {
-    type: 'tool-input-start';
-    id: string;
-    toolName: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-    providerExecuted?: boolean;
-} | {
-    type: 'tool-input-delta';
-    id: string;
-    delta: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-} | {
-    type: 'tool-input-end';
-    id: string;
-    providerMetadata?: SharedV2ProviderMetadata;
-} | LanguageModelV2ToolCall | LanguageModelV2ToolResult | LanguageModelV2File | LanguageModelV2Source | {
-    type: 'stream-start';
-    warnings: Array<LanguageModelV2CallWarning>;
-} | ({
-    type: 'response-metadata';
-} & LanguageModelV2ResponseMetadata) | {
-    type: 'finish';
-    usage: LanguageModelV2Usage;
-    finishReason: LanguageModelV2FinishReason;
-    providerMetadata?: SharedV2ProviderMetadata;
-} | {
-    type: 'raw';
-    rawValue: unknown;
-} | {
-    type: 'error';
-    error: unknown;
-};
-
-/**
- * Specification for a language model that implements the language model interface version 2.
- */
-type LanguageModelV2 = {
-    /**
-     * The language model must specify which language model interface version it implements.
-     */
-    readonly specificationVersion: 'v2';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Supported URL patterns by media type for the provider.
-     *
-     * The keys are media type patterns or full media types (e.g. `*\/*` for everything, `audio/*`, `video/*`, or `application/pdf`).
-     * and the values are arrays of regular expressions that match the URL paths.
-     *
-     * The matching should be against lower-case URLs.
-     *
-     * Matched URLs are supported natively by the model and are not downloaded.
-     *
-     * @returns A map of supported URL patterns by media type (as a promise or a plain object).
-     */
-    supportedUrls: PromiseLike<Record<string, RegExp[]>> | Record<string, RegExp[]>;
-    /**
-     * Generates a language model output (non-streaming).
-     *
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     */
-    doGenerate(options: LanguageModelV2CallOptions): PromiseLike<{
-        /**
-         * Ordered content that the model has generated.
-         */
-        content: Array<LanguageModelV2Content>;
-        /**
-         * Finish reason.
-         */
-        finishReason: LanguageModelV2FinishReason;
-        /**
-         * Usage information.
-         */
-        usage: LanguageModelV2Usage;
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: SharedV2ProviderMetadata;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Request HTTP body that was sent to the provider API.
-             */
-            body?: unknown;
-        };
-        /**
-         * Optional response information for telemetry and debugging purposes.
-         */
-        response?: LanguageModelV2ResponseMetadata & {
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-            /**
-             * Response HTTP body.
-             */
-            body?: unknown;
-        };
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<LanguageModelV2CallWarning>;
-    }>;
-    /**
-     * Generates a language model output (streaming).
-     *
-     * Naming: "do" prefix to prevent accidental direct usage of the method
-     * by the user.
-     *
-     * @return A stream of higher-level language model output parts.
-     */
-    doStream(options: LanguageModelV2CallOptions): PromiseLike<{
-        stream: ReadableStream<LanguageModelV2StreamPart>;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Request HTTP body that was sent to the provider API.
-             */
-            body?: unknown;
-        };
-        /**
-         * Optional response data.
-         */
-        response?: {
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-        };
-    }>;
-};
-
-/**
- * Experimental middleware for LanguageModelV2.
- * This type defines the structure for middleware that can be used to modify
- * the behavior of LanguageModelV2 operations.
- */
-type LanguageModelV2Middleware = {
-    /**
-     * Middleware specification version. Use `v2` for the current version.
-     */
-    middlewareVersion?: 'v2' | undefined;
-    /**
-     * Override the provider name if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideProvider?: (options: {
-        model: LanguageModelV2;
-    }) => string;
-    /**
-     * Override the model ID if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideModelId?: (options: {
-        model: LanguageModelV2;
-    }) => string;
-    /**
-     * Override the supported URLs if desired.
-     * @param options.model - The language model instance.
-     */
-    overrideSupportedUrls?: (options: {
-        model: LanguageModelV2;
-    }) => PromiseLike<Record<string, RegExp[]>> | Record<string, RegExp[]>;
-    /**
-     * Transforms the parameters before they are passed to the language model.
-     * @param options - Object containing the type of operation and the parameters.
-     * @param options.type - The type of operation ('generate' or 'stream').
-     * @param options.params - The original parameters for the language model call.
-     * @returns A promise that resolves to the transformed parameters.
-     */
-    transformParams?: (options: {
-        type: 'generate' | 'stream';
-        params: LanguageModelV2CallOptions;
-        model: LanguageModelV2;
-    }) => PromiseLike<LanguageModelV2CallOptions>;
-    /**
-     * Wraps the generate operation of the language model.
-     * @param options - Object containing the generate function, parameters, and model.
-     * @param options.doGenerate - The original generate function.
-     * @param options.doStream - The original stream function.
-     * @param options.params - The parameters for the generate call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The language model instance.
-     * @returns A promise that resolves to the result of the generate operation.
-     */
-    wrapGenerate?: (options: {
-        doGenerate: () => ReturnType<LanguageModelV2['doGenerate']>;
-        doStream: () => ReturnType<LanguageModelV2['doStream']>;
-        params: LanguageModelV2CallOptions;
-        model: LanguageModelV2;
-    }) => Promise<Awaited<ReturnType<LanguageModelV2['doGenerate']>>>;
-    /**
-     * Wraps the stream operation of the language model.
-     *
-     * @param options - Object containing the stream function, parameters, and model.
-     * @param options.doGenerate - The original generate function.
-     * @param options.doStream - The original stream function.
-     * @param options.params - The parameters for the stream call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The language model instance.
-     * @returns A promise that resolves to the result of the stream operation.
-     */
-    wrapStream?: (options: {
-        doGenerate: () => ReturnType<LanguageModelV2['doGenerate']>;
-        doStream: () => ReturnType<LanguageModelV2['doStream']>;
-        params: LanguageModelV2CallOptions;
-        model: LanguageModelV2;
-    }) => PromiseLike<Awaited<ReturnType<LanguageModelV2['doStream']>>>;
-};
-
-/**
- * Middleware for EmbeddingModelV3.
- * This type defines the structure for middleware that can be used to modify
- * the behavior of EmbeddingModelV3 operations.
- */
-type EmbeddingModelV3Middleware = {
-    /**
-     * Middleware specification version. Use `v3` for the current version.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Override the provider name if desired.
-     * @param options.model - The embedding model instance.
-     */
-    overrideProvider?: (options: {
-        model: EmbeddingModelV3;
-    }) => string;
-    /**
-     * Override the model ID if desired.
-     * @param options.model - The embedding model instance.
-     */
-    overrideModelId?: (options: {
-        model: EmbeddingModelV3;
-    }) => string;
-    /**
-     * Override the limit of how many embeddings can be generated in a single API call if desired.
-     * @param options.model - The embedding model instance.
-     */
-    overrideMaxEmbeddingsPerCall?: (options: {
-        model: EmbeddingModelV3;
-    }) => PromiseLike<number | undefined> | number | undefined;
-    /**
-     * Override support for handling multiple embedding calls in parallel, if desired..
-     * @param options.model - The embedding model instance.
-     */
-    overrideSupportsParallelCalls?: (options: {
-        model: EmbeddingModelV3;
-    }) => PromiseLike<boolean> | boolean;
-    /**
-     * Transforms the parameters before they are passed to the embed model.
-     * @param options - Object containing the type of operation and the parameters.
-     * @param options.params - The original parameters for the embedding model call.
-     * @returns A promise that resolves to the transformed parameters.
-     */
-    transformParams?: (options: {
-        params: EmbeddingModelV3CallOptions;
-        model: EmbeddingModelV3;
-    }) => PromiseLike<EmbeddingModelV3CallOptions>;
-    /**
-     * Wraps the embed operation of the embedding model.
-     *
-     * @param options - Object containing the embed function, parameters, and model.
-     * @param options.doEmbed - The original embed function.
-     * @param options.params - The parameters for the embed call. If the
-     * `transformParams` middleware is used, this will be the transformed parameters.
-     * @param options.model - The embedding model instance.
-     * @returns A promise that resolves to the result of the generate operation.
-     */
-    wrapEmbed?: (options: {
-        doEmbed: () => ReturnType<EmbeddingModelV3['doEmbed']>;
-        params: EmbeddingModelV3CallOptions;
-        model: EmbeddingModelV3;
-    }) => Promise<Awaited<ReturnType<EmbeddingModelV3['doEmbed']>>>;
-};
-
-type RerankingModelV3CallOptions = {
-    /**
-     * Documents to rerank.
-     * Either a list of texts or a list of JSON objects.
-     */
-    documents: {
-        type: 'text';
-        values: string[];
-    } | {
-        type: 'object';
-        values: JSONObject[];
-    };
-    /**
-     * The query is a string that represents the query to rerank the documents against.
-     */
-    query: string;
-    /**
-     * Optional limit returned documents to the top n documents.
-     */
-    topN?: number;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional provider-specific options. They are passed through
-     * to the provider from the AI SDK and enable provider-specific
-     * functionality that can be fully encapsulated in the provider.
-     */
-    providerOptions?: SharedV3ProviderOptions;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: SharedV3Headers;
-};
-
-/**
- * Specification for a reranking model that implements the reranking model interface version 3.
- */
-type RerankingModelV3 = {
-    /**
-     * The reranking model must specify which reranking model interface version it implements.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Provider ID.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID.
-     */
-    readonly modelId: string;
-    /**
-     * Reranking a list of documents using the query.
-     */
-    doRerank(options: RerankingModelV3CallOptions): PromiseLike<{
-        /**
-         * Ordered list of reranked documents (via index before reranking).
-         * The documents are sorted by the descending order of relevance scores.
-         */
-        ranking: Array<{
-            /**
-             * The index of the document in the original list of documents before reranking.
-             */
-            index: number;
-            /**
-             * The relevance score of the document after reranking.
-             */
-            relevanceScore: number;
-        }>;
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * to the provider from the AI SDK and enable provider-specific
-         * functionality that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: SharedV3ProviderMetadata;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings?: Array<SharedV3Warning>;
-        /**
-         * Optional response information for debugging purposes.
-         */
-        response?: {
-            /**
-             * ID for the generated response, if the provider sends one.
-             */
-            id?: string;
-            /**
-             * Timestamp for the start of the generated response, if the provider sends one.
-             */
-            timestamp?: Date;
-            /**
-             * The ID of the response model that was used to generate the response, if the provider sends one.
-             */
-            modelId?: string;
-            /**
-             * Response headers.
-             */
-            headers?: SharedV3Headers;
-            /**
-             * Response body.
-             */
-            body?: unknown;
-        };
-    }>;
-};
-
-type SpeechModelV3ProviderOptions = Record<string, JSONObject>;
-type SpeechModelV3CallOptions = {
-    /**
-     * Text to convert to speech.
-     */
-    text: string;
-    /**
-     * The voice to use for speech synthesis.
-     * This is provider-specific and may be a voice ID, name, or other identifier.
-     */
-    voice?: string;
-    /**
-     * The desired output format for the audio e.g. "mp3", "wav", etc.
-     */
-    outputFormat?: string;
-    /**
-     * Instructions for the speech generation e.g. "Speak in a slow and steady tone".
-     */
-    instructions?: string;
-    /**
-     * The speed of the speech generation.
-     */
-    speed?: number;
-    /**
-     * The language for speech generation. This should be an ISO 639-1 language code (e.g. "en", "es", "fr")
-     * or "auto" for automatic language detection. Provider support varies.
-     */
-    language?: string;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     * ```ts
-     * {
-     *   "openai": {}
-     * }
-     * ```
-     */
-    providerOptions?: SpeechModelV3ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-};
-
-/**
- * Speech model specification version 3.
- */
-type SpeechModelV3 = {
-    /**
-     * The speech model must specify which speech model interface
-     * version it implements. This will allow us to evolve the speech
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Generates speech audio from text.
-     */
-    doGenerate(options: SpeechModelV3CallOptions): PromiseLike<{
-        /**
-         * Generated audio as an ArrayBuffer.
-         * The audio should be returned without any unnecessary conversion.
-         * If the API returns base64 encoded strings, the audio should be returned
-         * as base64 encoded strings. If the API returns binary data, the audio
-         * should be returned as binary data.
-         */
-        audio: string | Uint8Array;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<SharedV3Warning>;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Response body (available only for providers that use HTTP requests).
-             */
-            body?: unknown;
-        };
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-            /**
-             * Response body.
-             */
-            body?: unknown;
-        };
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: Record<string, JSONObject>;
-    }>;
-};
-
-type TranscriptionModelV3ProviderOptions = Record<string, JSONObject>;
-type TranscriptionModelV3CallOptions = {
-    /**
-     * Audio data to transcribe.
-     * Accepts a `Uint8Array` or `string`, where `string` is a base64 encoded audio file.
-     */
-    audio: Uint8Array | string;
-    /**
-     * The IANA media type of the audio data.
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     * ```ts
-     * {
-     * "openai": {
-     * "timestampGranularities": ["word"]
-     * }
-     * }
-     * ```
-     */
-    providerOptions?: TranscriptionModelV3ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-};
-
-/**
- * Transcription model specification version 3.
- */
-type TranscriptionModelV3 = {
-    /**
-     * The transcription model must specify which transcription model interface
-     * version it implements. This will allow us to evolve the transcription
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Generates a transcript.
-     */
-    doGenerate(options: TranscriptionModelV3CallOptions): PromiseLike<{
-        /**
-         * The complete transcribed text from the audio.
-         */
-        text: string;
-        /**
-         * Array of transcript segments with timing information.
-         * Each segment represents a portion of the transcribed text with start and end times.
-         */
-        segments: Array<{
-            /**
-             * The text content of this segment.
-             */
-            text: string;
-            /**
-             * The start time of this segment in seconds.
-             */
-            startSecond: number;
-            /**
-             * The end time of this segment in seconds.
-             */
-            endSecond: number;
-        }>;
-        /**
-         * The detected language of the audio content, as an ISO-639-1 code (e.g., 'en' for English).
-         * May be undefined if the language couldn't be detected.
-         */
-        language: string | undefined;
-        /**
-         * The total duration of the audio file in seconds.
-         * May be undefined if the duration couldn't be determined.
-         */
-        durationInSeconds: number | undefined;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<SharedV3Warning>;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Raw request HTTP body that was sent to the provider API as a string (JSON should be stringified).
-             * Non-HTTP(s) providers should not set this.
-             */
-            body?: string;
-        };
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers?: SharedV3Headers;
-            /**
-             * Response body.
-             */
-            body?: unknown;
-        };
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: Record<string, JSONObject>;
-    }>;
-};
-
-/**
- * Provider for language, text embedding, and image generation models.
- */
-interface ProviderV3 {
-    readonly specificationVersion: 'v3';
-    /**
-     * Returns the language model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {LanguageModel} The language model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     */
-    languageModel(modelId: string): LanguageModelV3;
-    /**
-     * Returns the text embedding model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {LanguageModel} The language model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     */
-    embeddingModel(modelId: string): EmbeddingModelV3;
-    /**
-     * Returns the text embedding model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {EmbeddingModel} The embedding model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     *
-     * @deprecated Use `embeddingModel` instead.
-     */
-    textEmbeddingModel?(modelId: string): EmbeddingModelV3;
-    /**
-     * Returns the image model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {ImageModel} The image model associated with the id
-     */
-    imageModel(modelId: string): ImageModelV3;
-    /**
-     * Returns the transcription model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {TranscriptionModel} The transcription model associated with the id
-     */
-    transcriptionModel?(modelId: string): TranscriptionModelV3;
-    /**
-     * Returns the speech model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {SpeechModel} The speech model associated with the id
-     */
-    speechModel?(modelId: string): SpeechModelV3;
-    /**
-     * Returns the reranking model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {RerankingModel} The reranking model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     */
-    rerankingModel?(modelId: string): RerankingModelV3;
-}
-
-type SpeechModelV2ProviderOptions = Record<string, Record<string, JSONValue>>;
-type SpeechModelV2CallOptions = {
-    /**
-     * Text to convert to speech.
-     */
-    text: string;
-    /**
-     * The voice to use for speech synthesis.
-     * This is provider-specific and may be a voice ID, name, or other identifier.
-     */
-    voice?: string;
-    /**
-     * The desired output format for the audio e.g. "mp3", "wav", etc.
-     */
-    outputFormat?: string;
-    /**
-     * Instructions for the speech generation e.g. "Speak in a slow and steady tone".
-     */
-    instructions?: string;
-    /**
-     * The speed of the speech generation.
-     */
-    speed?: number;
-    /**
-     * The language for speech generation. This should be an ISO 639-1 language code (e.g. "en", "es", "fr")
-     * or "auto" for automatic language detection. Provider support varies.
-     */
-    language?: string;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     * ```ts
-     * {
-     *   "openai": {}
-     * }
-     * ```
-     */
-    providerOptions?: SpeechModelV2ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-};
-
-/**
- * Warning from the model provider for this call. The call will proceed, but e.g.
- * some settings might not be supported, which can lead to suboptimal results.
- */
-type SpeechModelV2CallWarning = {
-    type: 'unsupported-setting';
-    setting: keyof SpeechModelV2CallOptions;
-    details?: string;
-} | {
-    type: 'other';
-    message: string;
-};
-
-/**
- * Speech model specification version 2.
- */
-type SpeechModelV2 = {
-    /**
-     * The speech model must specify which speech model interface
-     * version it implements. This will allow us to evolve the speech
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v2';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Generates speech audio from text.
-     */
-    doGenerate(options: SpeechModelV2CallOptions): PromiseLike<{
-        /**
-         * Generated audio as an ArrayBuffer.
-         * The audio should be returned without any unnecessary conversion.
-         * If the API returns base64 encoded strings, the audio should be returned
-         * as base64 encoded strings. If the API returns binary data, the audio
-         * should be returned as binary data.
-         */
-        audio: string | Uint8Array;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<SpeechModelV2CallWarning>;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Response body (available only for providers that use HTTP requests).
-             */
-            body?: unknown;
-        };
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-            /**
-             * Response body.
-             */
-            body?: unknown;
-        };
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: Record<string, Record<string, JSONValue>>;
-    }>;
-};
-
-type TranscriptionModelV2ProviderOptions = Record<string, Record<string, JSONValue>>;
-type TranscriptionModelV2CallOptions = {
-    /**
-     * Audio data to transcribe.
-     * Accepts a `Uint8Array` or `string`, where `string` is a base64 encoded audio file.
-     */
-    audio: Uint8Array | string;
-    /**
-     * The IANA media type of the audio data.
-     *
-     * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-     */
-    mediaType: string;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * The outer record is keyed by the provider name, and the inner
-     * record is keyed by the provider-specific metadata key.
-     * ```ts
-     * {
-     * "openai": {
-     * "timestampGranularities": ["word"]
-     * }
-     * }
-     * ```
-     */
-    providerOptions?: TranscriptionModelV2ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-};
-
-/**
- * Warning from the model provider for this call. The call will proceed, but e.g.
- * some settings might not be supported, which can lead to suboptimal results.
- */
-type TranscriptionModelV2CallWarning = {
-    type: 'unsupported-setting';
-    setting: keyof TranscriptionModelV2CallOptions;
-    details?: string;
-} | {
-    type: 'other';
-    message: string;
-};
-
-/**
- * Transcription model specification version 2.
- */
-type TranscriptionModelV2 = {
-    /**
-     * The transcription model must specify which transcription model interface
-     * version it implements. This will allow us to evolve the transcription
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v2';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Generates a transcript.
-     */
-    doGenerate(options: TranscriptionModelV2CallOptions): PromiseLike<{
-        /**
-         * The complete transcribed text from the audio.
-         */
-        text: string;
-        /**
-         * Array of transcript segments with timing information.
-         * Each segment represents a portion of the transcribed text with start and end times.
-         */
-        segments: Array<{
-            /**
-             * The text content of this segment.
-             */
-            text: string;
-            /**
-             * The start time of this segment in seconds.
-             */
-            startSecond: number;
-            /**
-             * The end time of this segment in seconds.
-             */
-            endSecond: number;
-        }>;
-        /**
-         * The detected language of the audio content, as an ISO-639-1 code (e.g., 'en' for English).
-         * May be undefined if the language couldn't be detected.
-         */
-        language: string | undefined;
-        /**
-         * The total duration of the audio file in seconds.
-         * May be undefined if the duration couldn't be determined.
-         */
-        durationInSeconds: number | undefined;
-        /**
-         * Warnings for the call, e.g. unsupported settings.
-         */
-        warnings: Array<TranscriptionModelV2CallWarning>;
-        /**
-         * Optional request information for telemetry and debugging purposes.
-         */
-        request?: {
-            /**
-             * Raw request HTTP body that was sent to the provider API as a string (JSON should be stringified).
-             * Non-HTTP(s) providers should not set this.
-             */
-            body?: string;
-        };
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers?: SharedV2Headers;
-            /**
-             * Response body.
-             */
-            body?: unknown;
-        };
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         */
-        providerMetadata?: Record<string, Record<string, JSONValue>>;
-    }>;
-};
-
-/**
- * Provider for language, text embedding, and image generation models.
- */
-interface ProviderV2 {
-    /**
-     * Returns the language model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {LanguageModel} The language model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     */
-    languageModel(modelId: string): LanguageModelV2;
-    /**
-     * Returns the text embedding model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {LanguageModel} The language model associated with the id
-     *
-     * @throws {NoSuchModelError} If no such model exists.
-     */
-    textEmbeddingModel(modelId: string): EmbeddingModelV2<string>;
-    /**
-     * Returns the image model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {ImageModel} The image model associated with the id
-     */
-    imageModel(modelId: string): ImageModelV2;
-    /**
-     * Returns the transcription model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {TranscriptionModel} The transcription model associated with the id
-     */
-    transcriptionModel?(modelId: string): TranscriptionModelV2;
-    /**
-     * Returns the speech model with the given id.
-     * The model id is then passed to the provider function to get the model.
-     *
-     * @param {string} modelId - The id of the model to return.
-     *
-     * @returns {SpeechModel} The speech model associated with the id
-     */
-    speechModel?(modelId: string): SpeechModelV2;
-}
-
-/**
- * A video or image file that can be used for video editing or image-to-video generation.
- * Supports both image inputs (for image-to-video) and video inputs (for editing).
- */
-type VideoModelV3File = {
-    type: 'file';
-    /**
-     * The IANA media type of the file.
-     * Video types: 'video/mp4', 'video/webm', 'video/quicktime'
-     * Image types: 'image/png', 'image/jpeg', 'image/webp'
-     */
-    mediaType: string;
-    /**
-     * File data as base64 encoded string or binary data.
-     */
-    data: string | Uint8Array;
-    /**
-     * Optional provider-specific metadata for the file part.
-     */
-    providerOptions?: SharedV3ProviderMetadata;
-} | {
-    type: 'url';
-    /**
-     * The URL of the video or image file.
-     */
-    url: string;
-    /**
-     * Optional provider-specific metadata for the file part.
-     */
-    providerOptions?: SharedV3ProviderMetadata;
-};
-
-type VideoModelV3CallOptions = {
-    /**
-     * Text prompt for the video generation.
-     */
-    prompt: string | undefined;
-    /**
-     * Number of videos to generate. Default: 1.
-     * Most video models only support n=1 due to computational cost.
-     */
-    n: number;
-    /**
-     * Aspect ratio of the videos to generate.
-     * Must have the format `{width}:{height}`.
-     * `undefined` will use the provider's default aspect ratio.
-     * Common values: '16:9', '9:16', '1:1', '21:9', '4:3'
-     */
-    aspectRatio: `${number}:${number}` | undefined;
-    /**
-     * Resolution of the video to generate.
-     * Format: `{width}x{height}` (e.g., '1280x720', '1920x1080')
-     * `undefined` will use the provider's default resolution.
-     */
-    resolution: `${number}x${number}` | undefined;
-    /**
-     * Duration of the video in seconds.
-     * `undefined` will use the provider's default duration.
-     * Typically 3-10 seconds for most models.
-     */
-    duration: number | undefined;
-    /**
-     * Frames per second (FPS) for the video.
-     * `undefined` will use the provider's default FPS.
-     * Common values: 24, 30, 60
-     */
-    fps: number | undefined;
-    /**
-     * Seed for deterministic video generation.
-     * `undefined` will use a random seed.
-     */
-    seed: number | undefined;
-    /**
-     * Input image for image-to-video generation.
-     * The image serves as the starting frame that the model will animate.
-     */
-    image: VideoModelV3File | undefined;
-    /**
-     * Additional provider-specific options that are passed through to the provider
-     * as body parameters.
-     *
-     * Example:
-     * {
-     *   "fal": {
-     *     "loop": true,
-     *     "motionStrength": 0.8
-     *   }
-     * }
-     */
-    providerOptions: SharedV3ProviderOptions;
-    /**
-     * Abort signal for cancelling the operation.
-     */
-    abortSignal?: AbortSignal;
-    /**
-     * Additional HTTP headers to be sent with the request.
-     * Only applicable for HTTP-based providers.
-     */
-    headers?: Record<string, string | undefined>;
-};
-
-type GetMaxVideosPerCallFunction = (options: {
-    modelId: string;
-}) => PromiseLike<number | undefined> | number | undefined;
-/**
- * Generated video data. Can be a URL, base64-encoded string, or binary data.
- */
-type VideoModelV3VideoData = {
-    /**
-     * Video available as a URL (most common for video providers).
-     */
-    type: 'url';
-    url: string;
-    mediaType: string;
-} | {
-    /**
-     * Video as base64-encoded string.
-     */
-    type: 'base64';
-    data: string;
-    mediaType: string;
-} | {
-    /**
-     * Video as binary data.
-     */
-    type: 'binary';
-    data: Uint8Array;
-    mediaType: string;
-};
-/**
- * Video generation model specification version 3.
- */
-type VideoModelV3 = {
-    /**
-     * The video model must specify which video model interface
-     * version it implements. This will allow us to evolve the video
-     * model interface and retain backwards compatibility. The different
-     * implementation versions can be handled as a discriminated union
-     * on our side.
-     */
-    readonly specificationVersion: 'v3';
-    /**
-     * Name of the provider for logging purposes.
-     */
-    readonly provider: string;
-    /**
-     * Provider-specific model ID for logging purposes.
-     */
-    readonly modelId: string;
-    /**
-     * Limit of how many videos can be generated in a single API call.
-     * Can be set to a number for a fixed limit, to undefined to use
-     * the global limit, or a function that returns a number or undefined,
-     * optionally as a promise.
-     *
-     * Most video models only support generating 1 video at a time due to
-     * computational cost. Default is typically 1.
-     */
-    readonly maxVideosPerCall: number | undefined | GetMaxVideosPerCallFunction;
-    /**
-     * Generates an array of videos.
-     */
-    doGenerate(options: VideoModelV3CallOptions): PromiseLike<{
-        /**
-         * Generated videos as URLs, base64 strings, or binary data.
-         *
-         * Most providers return URLs to video files (MP4, WebM) due to large file sizes.
-         * Use the discriminated union to indicate the type of video data being returned.
-         */
-        videos: Array<VideoModelV3VideoData>;
-        /**
-         * Warnings for the call, e.g. unsupported features.
-         */
-        warnings: Array<SharedV3Warning>;
-        /**
-         * Additional provider-specific metadata. They are passed through
-         * from the provider to the AI SDK and enable provider-specific
-         * results that can be fully encapsulated in the provider.
-         *
-         * The outer record is keyed by the provider name, and the inner
-         * record is provider-specific metadata.
-         *
-         * ```ts
-         * {
-         *   "fal": {
-         *     "videos": [{
-         *       "duration": 5.0,
-         *       "fps": 24,
-         *       "width": 1280,
-         *       "height": 720
-         *     }]
-         *   }
-         * }
-         * ```
-         */
-        providerMetadata?: SharedV3ProviderMetadata;
-        /**
-         * Response information for telemetry and debugging purposes.
-         */
-        response: {
-            /**
-             * Timestamp for the start of the generated response.
-             */
-            timestamp: Date;
-            /**
-             * The ID of the response model that was used to generate the response.
-             */
-            modelId: string;
-            /**
-             * Response headers.
-             */
-            headers: Record<string, string> | undefined;
-        };
-    }>;
-};
-
-export { AISDKError, APICallError, type EmbeddingModelV2, type EmbeddingModelV2Embedding, type EmbeddingModelV3, type EmbeddingModelV3CallOptions, type EmbeddingModelV3Embedding, type EmbeddingModelV3Middleware, type EmbeddingModelV3Result, EmptyResponseBodyError, type VideoModelV3 as Experimental_VideoModelV3, type VideoModelV3CallOptions as Experimental_VideoModelV3CallOptions, type VideoModelV3File as Experimental_VideoModelV3File, type VideoModelV3VideoData as Experimental_VideoModelV3VideoData, type ImageModelV2, type ImageModelV2CallOptions, type ImageModelV2CallWarning, type ImageModelV2ProviderMetadata, type ImageModelV3, type ImageModelV3CallOptions, type ImageModelV3File, type ImageModelV3Middleware, type ImageModelV3ProviderMetadata, type ImageModelV3Usage, InvalidArgumentError, InvalidPromptError, InvalidResponseDataError, type JSONArray, type JSONObject, JSONParseError, type JSONValue, type LanguageModelV2, type LanguageModelV2CallOptions, type LanguageModelV2CallWarning, type LanguageModelV2Content, type LanguageModelV2DataContent, type LanguageModelV2File, type LanguageModelV2FilePart, type LanguageModelV2FinishReason, type LanguageModelV2FunctionTool, type LanguageModelV2Message, type LanguageModelV2Middleware, type LanguageModelV2Prompt, type LanguageModelV2ProviderDefinedTool, type LanguageModelV2Reasoning, type LanguageModelV2ReasoningPart, type LanguageModelV2ResponseMetadata, type LanguageModelV2Source, type LanguageModelV2StreamPart, type LanguageModelV2Text, type LanguageModelV2TextPart, type LanguageModelV2ToolCall, type LanguageModelV2ToolCallPart, type LanguageModelV2ToolChoice, type LanguageModelV2ToolResultOutput, type LanguageModelV2ToolResultPart, type LanguageModelV2Usage, type LanguageModelV3, type LanguageModelV3CallOptions, type LanguageModelV3Content, type LanguageModelV3DataContent, type LanguageModelV3File, type LanguageModelV3FilePart, type LanguageModelV3FinishReason, type LanguageModelV3FunctionTool, type LanguageModelV3GenerateResult, type LanguageModelV3Message, type LanguageModelV3Middleware, type LanguageModelV3Prompt, type LanguageModelV3ProviderTool, type LanguageModelV3Reasoning, type LanguageModelV3ReasoningPart, type LanguageModelV3ResponseMetadata, type LanguageModelV3Source, type LanguageModelV3StreamPart, type LanguageModelV3StreamResult, type LanguageModelV3Text, type LanguageModelV3TextPart, type LanguageModelV3ToolApprovalRequest, type LanguageModelV3ToolApprovalResponsePart, type LanguageModelV3ToolCall, type LanguageModelV3ToolCallPart, type LanguageModelV3ToolChoice, type LanguageModelV3ToolResult, type LanguageModelV3ToolResultOutput, type LanguageModelV3ToolResultPart, type LanguageModelV3Usage, LoadAPIKeyError, LoadSettingError, NoContentGeneratedError, NoSuchModelError, type ProviderV2, type ProviderV3, type RerankingModelV3, type RerankingModelV3CallOptions, type SharedV2Headers, type SharedV2ProviderMetadata, type SharedV2ProviderOptions, type SharedV3Headers, type SharedV3ProviderMetadata, type SharedV3ProviderOptions, type SharedV3Warning, type SpeechModelV2, type SpeechModelV2CallOptions, type SpeechModelV2CallWarning, type SpeechModelV3, type SpeechModelV3CallOptions, TooManyEmbeddingValuesForCallError, type TranscriptionModelV2, type TranscriptionModelV2CallOptions, type TranscriptionModelV2CallWarning, type TranscriptionModelV3, type TranscriptionModelV3CallOptions, type TypeValidationContext, TypeValidationError, UnsupportedFunctionalityError, getErrorMessage, isJSONArray, isJSONObject, isJSONValue };
+export { type AssistantContent, type AssistantModelMessage, DEFAULT_MAX_DOWNLOAD_SIZE, type DataContent, DelayedPromise, DownloadError, type FetchFunction, type FilePart, type FlexibleSchema, type IdGenerator, type ImagePart, type InferSchema, type InferToolInput, type InferToolOutput, type LazySchema, type MaybePromiseLike, type ModelMessage, type ParseResult, type ProviderOptions, type ProviderToolFactory, type ProviderToolFactoryWithOutputSchema, type ReasoningPart, type Resolvable, type ResponseHandler, type Schema, type SystemModelMessage, type TextPart, type Tool, type ToolApprovalRequest, type ToolApprovalResponse, type ToolCall, type ToolCallOptions, type ToolCallPart, type ToolContent, type ToolExecuteFunction, type ToolExecutionOptions, type ToolModelMessage, type ToolNameMapping, type ToolNeedsApprovalFunction, type ToolResult, type ToolResultOutput, type ToolResultPart, type UserContent, type UserModelMessage, VERSION, type ValidationResult, asSchema, combineHeaders, convertAsyncIteratorToReadableStream, convertBase64ToUint8Array, convertImageModelFileToDataUri, convertToBase64, convertToFormData, convertUint8ArrayToBase64, createBinaryResponseHandler, createEventSourceResponseHandler, createIdGenerator, createJsonErrorResponseHandler, createJsonResponseHandler, createProviderToolFactory, createProviderToolFactoryWithOutputSchema, createStatusCodeErrorResponseHandler, createToolNameMapping, delay, downloadBlob, dynamicTool, executeTool, extractResponseHeaders, generateId, getErrorMessage, getFromApi, getRuntimeEnvironmentUserAgent, injectJsonInstructionIntoMessages, isAbortError, isNonNullable, isParsableJson, isUrlSupported, jsonSchema, lazySchema, loadApiKey, loadOptionalSetting, loadSetting, mediaTypeToExtension, normalizeHeaders, parseJSON, parseJsonEventStream, parseProviderOptions, postFormDataToApi, postJsonToApi, postToApi, readResponseWithSizeLimit, removeUndefinedEntries, resolve, safeParseJSON, safeValidateTypes, stripFileExtension, tool, validateDownloadUrl, validateTypes, withUserAgentSuffix, withoutTrailingSlash, zodSchema };
